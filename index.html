@@ -699,7 +699,7 @@
     const grid = document.getElementById('projectsGrid');
     // Featured project first, then the rest
     const ordered = [...projects.filter(p => p.featured), ...projects.filter(p => !p.featured)];
-    const toShow = ordered.slice(0, 3);
+    const toShow = ordered.slice(0, 6);
     grid.innerHTML = toShow.map((p, i) => `
       <div class="project-card reveal ${i>0?'reveal-delay-'+i:''}">
         ${p.image
