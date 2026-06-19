@@ -122,6 +122,32 @@
     .trust-title{font-family:'Cormorant Garamond',serif;font-size:24px;font-weight:400;margin-bottom:12px;}
     .trust-desc{font-size:14px;color:var(--white-muted);line-height:1.8;}
 
+    .clients-gallery-section{padding:100px 60px;background:var(--navy-mid);}
+    .clients-gallery-header{max-width:1400px;margin:0 auto 70px;display:flex;align-items:flex-start;justify-content:space-between;gap:60px;}
+    .clients-gallery-wrap{position:relative;overflow:hidden;}
+    .clients-gallery-wrap::before,.clients-gallery-wrap::after{content:'';position:absolute;top:0;bottom:0;width:200px;z-index:2;pointer-events:none;}
+    .clients-gallery-wrap::before{left:0;background:linear-gradient(to right,var(--navy-mid),transparent);}
+    .clients-gallery-wrap::after{right:0;background:linear-gradient(to left,var(--navy-mid),transparent);}
+    .clients-gallery-track{display:flex;gap:16px;width:max-content;animation:galleryScroll 35s linear infinite;}
+    .clients-gallery-track:hover{animation-play-state:paused;}
+    .clients-gallery-track-reverse{animation-direction:reverse;animation-duration:40s;}
+    .gallery-row{margin-bottom:16px;}
+    .gallery-row:last-child{margin-bottom:0;}
+
+    .client-gallery-item{position:relative;overflow:hidden;cursor:none;border-radius:8px;background:linear-gradient(160deg,#0e2040,#152844);}
+    .client-gallery-item img{width:100%;height:100%;object-fit:cover;position:absolute;inset:0;}
+    .client-gallery-caption{position:absolute;inset:0;background:linear-gradient(to top,rgba(10,22,40,0.95) 0%,transparent 60%);display:flex;flex-direction:column;justify-content:flex-end;padding:20px;opacity:0;transition:opacity 0.4s ease;}
+    .client-gallery-item:hover .client-gallery-caption{opacity:1;}
+    .cgc-name{font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:400;color:var(--white);margin-bottom:4px;}
+    .cgc-sub{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--gold);}
+
+    .gallery-item-lg{min-width:380px;height:280px;}
+    .gallery-item-md{min-width:300px;height:220px;}
+    .gallery-item-sm{min-width:240px;height:180px;}
+    .gallery-item-xl{min-width:420px;height:300px;}
+
+    @keyframes galleryScroll{0%{transform:translateX(0);}100%{transform:translateX(-50%);}}
+
 .about-cta{padding:100px 60px;background:var(--navy);position:relative;overflow:hidden;}
     .about-cta::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 50%,rgba(201,168,76,0.07) 0%,transparent 70%);}
     .about-cta-inner{position:relative;z-index:2;max-width:800px;margin:0 auto;text-align:center;}
@@ -317,7 +343,30 @@
     </div>
   </section>
 
-  <!-- TEAM -->
+  <!-- SATISFIED CLIENTS GALLERY -->
+  <section class="clients-gallery-section">
+    <div class="clients-gallery-header">
+      <div>
+        <div class="section-eyebrow reveal"><div class="section-eyebrow-line"></div><span>Satisfied Clients</span></div>
+        <h2 class="section-title reveal reveal-delay-1">Real Families.<br><em>Real Stories.</em></h2>
+      </div>
+      <a href="/clients/" class="btn-ghost reveal reveal-delay-2" style="margin-bottom:10px;">
+        <div class="btn-ghost-icon"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div>
+        All Stories
+      </a>
+    </div>
+    <div class="clients-gallery-wrap" style="margin-bottom:16px;">
+      <div class="clients-gallery-track gallery-row" id="galleryRow1">
+        <!-- JS renders -->
+      </div>
+    </div>
+    <div class="clients-gallery-wrap">
+      <div class="clients-gallery-track clients-gallery-track-reverse gallery-row" id="galleryRow2">
+        <!-- JS renders -->
+      </div>
+    </div>
+  </section>
+
 <!-- CTA -->
   <section class="about-cta">
     <div class="about-cta-inner">
@@ -385,9 +434,66 @@
     document.querySelectorAll('.stats-section').forEach(el=>cobs.observe(el));
 
     // Footer project links from JSON
-    fetch('/assets/js/projects.json').then(r=>r.json()).then(({projects})=>{
+    fetch('/assets/js/projects.json', { cache: 'no-store' }).then(r=>r.json()).then(({projects})=>{
       document.getElementById('footerProjectLinks').innerHTML = projects.map(p=>`<li><a href="/project/?id=${p.id}">${p.name}</a></li>`).join('');
     });
+
+    // Satisfied clients gallery
+    async function loadClientGallery() {
+      const res = await fetch('/assets/js/clients-gallery.json', { cache: 'no-store' });
+      const data = await res.json();
+      return data.gallery || [];
+    }
+
+    function buildClientGalleryItem(caption, sub, image) {
+      return `
+        <div class="client-gallery-item gallery-item-md">
+          ${image ? `<img src="${image}" alt="${caption}">` : '<div style="background:#152844;"></div>'}
+          <div class="client-gallery-caption">
+            <div class="cgc-name">${caption}</div>
+            <div class="cgc-sub">${sub}</div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderClientGallery(items) {
+      const allItems = (items || []).map(g => ({ caption: g.caption, sub: g.sub, image: g.image }));
+      if (!allItems.length) return;
+
+      const sizes = ['gallery-item-lg','gallery-item-md','gallery-item-sm','gallery-item-xl','gallery-item-md','gallery-item-lg','gallery-item-sm','gallery-item-xl'];
+
+      // Row 1
+      const row1Items = [...allItems, ...allItems];
+      const row1 = document.getElementById('galleryRow1');
+      row1.innerHTML = row1Items.map((item, i) =>
+        `<div class="client-gallery-item ${sizes[i % sizes.length]}">
+          ${item.image ? `<img src="${item.image}" alt="${item.caption}">` : '<div style="background:#152844;"></div>'}
+          <div class="client-gallery-caption">
+            <div class="cgc-name">${item.caption}</div>
+            <div class="cgc-sub">${item.sub}</div>
+          </div>
+        </div>`
+      ).join('');
+
+      // Row 2 reversed
+      const row2Items = [...allItems].reverse();
+      const row2Full = [...row2Items, ...row2Items];
+      const row2 = document.getElementById('galleryRow2');
+      row2.innerHTML = row2Full.map((item, i) =>
+        `<div class="client-gallery-item ${sizes[(i + 3) % sizes.length]}">
+          ${item.image ? `<img src="${item.image}" alt="${item.caption}">` : '<div style="background:#152844;"></div>'}
+          <div class="client-gallery-caption">
+            <div class="cgc-name">${item.caption}</div>
+            <div class="cgc-sub">${item.sub}</div>
+          </div>
+        </div>`
+      ).join('');
+    }
+
+    loadClientGallery().then(items => {
+      renderClientGallery(items);
+    }).catch(err => console.error('Failed to load clients gallery:', err));
   </script>
 </body>
 </html>
