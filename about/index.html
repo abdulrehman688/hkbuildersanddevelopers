@@ -24,26 +24,63 @@
     @keyframes gridShift{0%{transform:translateY(0);}100%{transform:translateY(80px);}}
     @keyframes rotateSlow{0%{transform:rotate(0deg);}100%{transform:rotate(360deg);}}
 
+    /* NAV */
     nav{position:fixed;top:0;left:0;right:0;z-index:1000;padding:22px 60px;display:flex;align-items:center;justify-content:space-between;transition:all 0.4s ease;}
     nav.scrolled{background:rgba(10,22,40,0.95);backdrop-filter:blur(20px);padding:14px 60px;border-bottom:1px solid rgba(201,168,76,0.15);}
     .nav-logo{display:flex;align-items:center;gap:14px;text-decoration:none;}
-    .nav-logo-mark{width:48px;height:48px;border:1.5px solid var(--gold);border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Cormorant Garamond',serif;font-weight:700;font-size:18px;background:var(--gold-gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+    .nav-logo-mark{width:48px;height:48px;border:1.5px solid var(--gold);border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Cormorant Garamond',serif;font-weight:700;font-size:18px;background:var(--gold-gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;flex-shrink:0;}
     .nav-logo-text .name{font-family:'Cormorant Garamond',serif;font-weight:600;font-size:16px;background:var(--gold-gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;letter-spacing:2px;text-transform:uppercase;}
-    .nav-logo-text .sub{font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--white-muted);}
+    .nav-logo-text .sub{font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--white-muted);font-weight:400;}
     .nav-links{display:flex;align-items:center;gap:40px;list-style:none;}
-    .nav-links a{text-decoration:none;font-size:12px;letter-spacing:2.5px;text-transform:uppercase;color:var(--white-muted);position:relative;transition:color 0.3s ease;}
+    .nav-links a{text-decoration:none;font-size:12px;letter-spacing:2.5px;text-transform:uppercase;color:var(--white-muted);font-weight:400;position:relative;transition:color 0.3s ease;}
     .nav-links a::after{content:'';position:absolute;bottom:-4px;left:0;width:0;height:1px;background:var(--gold);transition:width 0.3s ease;}
     .nav-links a:hover,.nav-links a.active{color:var(--gold-light);}
     .nav-links a:hover::after,.nav-links a.active::after{width:100%;}
-    .nav-cta{padding:10px 28px;border:1px solid var(--gold);color:var(--gold)!important;font-size:11px!important;letter-spacing:2px;text-transform:uppercase;text-decoration:none;transition:all 0.3s ease!important;}
+    .nav-cta{padding:12px 36px;border:2px solid var(--gold);color:var(--gold)!important;font-size:11px!important;letter-spacing:2px;text-transform:uppercase;text-decoration:none;transition:all 0.3s cubic-bezier(0.16,1,0.3,1)!important;position:relative;overflow:hidden;display:inline-flex;align-items:center;gap:8px;background:transparent;font-weight:600;}
+    .nav-cta::before{content:'';position:absolute;inset:0;background:var(--gold-gradient);transform:translateX(-100%);transition:transform 0.4s cubic-bezier(0.16,1,0.3,1);z-index:-1;}
     .nav-cta::after{display:none!important;}
-    .nav-cta:hover{background:var(--gold)!important;color:var(--navy)!important;}
-    .hamburger{display:none;flex-direction:column;gap:5px;cursor:none;}
-    .hamburger span{display:block;width:28px;height:1.5px;background:var(--gold);}
-    .mobile-menu{position:fixed;inset:0;background:var(--navy);z-index:999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:40px;transform:translateX(100%);transition:transform 0.5s cubic-bezier(0.16,1,0.3,1);}
+    .nav-cta:hover{color:var(--navy)!important;border-color:var(--gold);box-shadow:0 12px 30px rgba(201,168,76,0.35);}
+    .nav-cta:hover::before{transform:translateX(0);}
+    .nav-cta:active{transform:scale(0.98);}
+    .hamburger{display:none;flex-direction:column;gap:5px;cursor:none;z-index:1001;width:32px;height:24px;position:relative;}
+    .hamburger span{display:block;width:100%;height:2px;background:var(--gold);transition:all 0.3s cubic-bezier(0.16,1,0.3,1);position:absolute;left:0;}
+    .hamburger span:nth-child(1){top:0;}
+    .hamburger span:nth-child(2){top:11px;opacity:1;}
+    .hamburger span:nth-child(3){top:22px;}
+    .hamburger.open span:nth-child(1){transform:rotate(45deg);top:11px;}
+    .hamburger.open span:nth-child(2){opacity:0;}
+    .hamburger.open span:nth-child(3){transform:rotate(-45deg);top:11px;}
+    .mobile-menu{position:fixed;inset:0;background:linear-gradient(135deg,#0a1628 0%,#0e2040 50%,#0a1628 100%);z-index:1000;display:flex;flex-direction:column;align-items:stretch;justify-content:flex-start;gap:0;transform:translateX(100%);transition:transform 0.5s cubic-bezier(0.16,1,0.3,1);}
     .mobile-menu.open{transform:translateX(0);}
-    .mobile-menu a{font-family:'Cormorant Garamond',serif;font-size:40px;font-weight:300;text-decoration:none;color:var(--white);transition:color 0.3s ease;}
-    .mobile-menu a:hover{color:var(--gold);}
+    .mobile-menu-header{display:flex;align-items:center;justify-content:space-between;padding:24px 30px;border-bottom:1px solid rgba(201,168,76,0.15);}
+    .mobile-menu-logo{font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:600;background:var(--gold-gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+    .mobile-menu-close{width:32px;height:32px;display:flex;align-items:center;justify-content:center;cursor:none;position:relative;}
+    .mobile-menu-close::before,.mobile-menu-close::after{content:'';position:absolute;width:24px;height:2px;background:var(--gold);transition:all 0.3s ease;}
+    .mobile-menu-close::before{transform:rotate(45deg);}
+    .mobile-menu-close::after{transform:rotate(-45deg);}
+    .mobile-menu-close:hover::before,.mobile-menu-close:hover::after{background:var(--gold-light);box-shadow:0 0 8px rgba(201,168,76,0.5);}
+    .mobile-menu-links{display:flex;flex-direction:column;gap:0;padding:20px 0;}
+    .mobile-menu a{font-family:'Cormorant Garamond',serif;font-size:24px;font-weight:400;text-decoration:none;color:var(--white);letter-spacing:1px;transition:all 0.3s cubic-bezier(0.16,1,0.3,1);padding:18px 30px;border-left:4px solid transparent;position:relative;display:flex;align-items:center;gap:16px;overflow:hidden;}
+    .mobile-menu a::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--gold-gradient);transform:scaleY(0);transform-origin:top;transition:transform 0.3s cubic-bezier(0.16,1,0.3,1);}
+    .mobile-menu a::after{content:'';position:absolute;inset:0;background:rgba(201,168,76,0.06);transform:translateX(-100%);transition:transform 0.3s cubic-bezier(0.16,1,0.3,1);z-index:-1;}
+    .mobile-menu a:hover{color:var(--gold-light);}
+    .mobile-menu a:hover::before{transform:scaleY(1);}
+    .mobile-menu a:hover::after{transform:translateX(0);}
+    .mobile-menu-link-icon{width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:16px;opacity:0.7;transition:all 0.3s ease;}
+    .mobile-menu a:hover .mobile-menu-link-icon{opacity:1;color:var(--gold);}
+    .mobile-menu-cta{padding:20px 30px;}
+    .mobile-menu-cta .btn-primary{width:100%;text-align:center;display:block;}
+    .mobile-menu-footer{margin-top:auto;padding:30px;border-top:2px solid rgba(201,168,76,0.25);text-align:center;background:linear-gradient(to bottom,transparent,rgba(201,168,76,0.03));}
+    .mobile-menu-socials{display:flex;gap:16px;justify-content:center;margin-bottom:28px;}
+    .mobile-menu-socials a{width:48px;height:48px;display:flex;align-items:center;justify-content:center;border:2px solid rgba(201,168,76,0.4);border-radius:50%;color:var(--gold);transition:all 0.3s cubic-bezier(0.16,1,0.3,1);padding:0;position:relative;overflow:hidden;}
+    .mobile-menu-socials a::before{content:'';position:absolute;inset:0;background:rgba(201,168,76,0.1);transform:scale(0);transition:transform 0.3s cubic-bezier(0.16,1,0.3,1);border-radius:50%;}
+    .mobile-menu-socials a:hover{border-color:var(--gold-light);color:var(--gold-light);box-shadow:0 0 20px rgba(201,168,76,0.3);}
+    .mobile-menu-socials a:hover::before{transform:scale(1);}
+    .mobile-menu-socials svg{width:20px;height:20px;position:relative;z-index:1;}
+    .mobile-menu-contact{font-size:13px;color:var(--white-muted);letter-spacing:1px;display:flex;flex-direction:column;gap:12px;}
+    .mobile-menu-contact>span{font-weight:600;color:var(--gold-light);font-size:12px;letter-spacing:2px;text-transform:uppercase;}
+    .mobile-menu-contact a{font-size:13px;color:var(--gold);text-decoration:none;padding:0;border:none;transition:all 0.3s ease;display:inline-block;}
+    .mobile-menu-contact a:active{transform:scale(0.98);}
 
     .page-hero{min-height:100vh;display:flex;align-items:center;position:relative;overflow:hidden;padding:0 60px;}
     .page-hero-bg{position:absolute;inset:0;background:linear-gradient(135deg,#0a1628 0%,#0e2040 60%,#0a1628 100%);}
@@ -226,17 +263,44 @@
   <div class="gold-top-bar" id="scrollProgress"></div>
 
   <div class="mobile-menu" id="mobileMenu">
-    <a href="/" onclick="closeMobile()">Home</a>
-    <a href="/projects/" onclick="closeMobile()">Projects We Market</a>
-    <a href="/clients/" onclick="closeMobile()">Satisfied Clients</a>
-    <a href="/about/" onclick="closeMobile()">About Us</a>
-    <a href="/contact/" onclick="closeMobile()">Contact</a>
+    <div class="mobile-menu-header">
+      <div class="mobile-menu-logo">HK</div>
+      <div class="mobile-menu-close" onclick="closeMobile()"></div>
+    </div>
+    <div class="mobile-menu-links">
+      <a href="/" onclick="closeMobile()"><span class="mobile-menu-link-icon">⌂</span>Home</a>
+      <a href="/projects/" onclick="closeMobile()"><span class="mobile-menu-link-icon">🏗</span>Projects We Market</a>
+      <a href="/clients/" onclick="closeMobile()"><span class="mobile-menu-link-icon">⭐</span>Satisfied Clients</a>
+      <a href="/about/" onclick="closeMobile()"><span class="mobile-menu-link-icon">ℹ</span>About Us</a>
+      <a href="/contact/" onclick="closeMobile()"><span class="mobile-menu-link-icon">✉</span>Contact</a>
+    </div>
+    <div class="mobile-menu-cta">
+      <a href="/contact/" onclick="closeMobile()" class="btn-primary">Get In Touch</a>
+    </div>
+    <div class="mobile-menu-footer">
+      <div class="mobile-menu-socials">
+        <a href="https://www.facebook.com/share/1NHx4GR5Du/?mibextrid=wwXIfr" target="_blank" rel="noopener noreferrer">
+          <svg viewBox="0 0 24 24"><path fill="currentColor" d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+        </a>
+        <a href="https://www.instagram.com/hkbuildersanddevelopers?igsh=cWw5d3lzcDVzM2Q5" target="_blank" rel="noopener noreferrer">
+          <svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+        </a>
+      </div>
+      <div class="mobile-menu-contact">
+        <span>Need Help?</span>
+        <a href="tel:+923252208153">+92 325 2208153</a>
+        <a href="mailto:hkbuildersanddevelopers21@gmail.com">Email Us</a>
+      </div>
+    </div>
   </div>
 
   <nav id="navbar">
     <a href="/" class="nav-logo">
       <div class="nav-logo-mark">HK</div>
-      <div class="nav-logo-text"><div class="name">HK Builders</div><div class="sub">& Developers</div></div>
+      <div class="nav-logo-text">
+        <div class="name">HK Builders</div>
+        <div class="sub">& Developers</div>
+      </div>
     </a>
     <ul class="nav-links">
       <li><a href="/">Home</a></li>
@@ -245,7 +309,9 @@
       <li><a href="/about/" class="active">About Us</a></li>
       <li><a href="/contact/" class="nav-cta">Get In Touch</a></li>
     </ul>
-    <div class="hamburger" id="hamburger" onclick="toggleMobile()"><span></span><span></span><span></span></div>
+    <div class="hamburger" id="hamburger" onclick="toggleMobile()">
+      <span></span><span></span><span></span>
+    </div>
   </nav>
 
   <!-- HERO -->
@@ -494,6 +560,22 @@
     loadClientGallery().then(items => {
       renderClientGallery(items);
     }).catch(err => console.error('Failed to load clients gallery:', err));
+
+    function toggleMobile() {
+      const menu = document.getElementById('mobileMenu');
+      const hamburger = document.getElementById('hamburger');
+      const navbar = document.getElementById('navbar');
+      menu.classList.toggle('open');
+      hamburger.classList.toggle('open');
+      navbar.style.display = menu.classList.contains('open') ? 'none' : 'flex';
+    }
+    function closeMobile() {
+      const menu = document.getElementById('mobileMenu');
+      const navbar = document.getElementById('navbar');
+      menu.classList.remove('open');
+      document.getElementById('hamburger').classList.remove('open');
+      navbar.style.display = 'flex';
+    }
   </script>
 </body>
 </html>
