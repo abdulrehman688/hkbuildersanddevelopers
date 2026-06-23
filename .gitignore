@@ -1,2 +1,4 @@
 index.html.broken-backup
 /.claude/
+node_modules/
+package*.json
