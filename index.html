@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8"/>
@@ -464,7 +464,7 @@
       <div class="featured-visual reveal">
         <div class="featured-image-frame">
           <div class="featured-placeholder">
-            <img src="/assets/images/projects/united-palm-green/main.jpg" alt="United Palm Greens">
+            <img loading="lazy" decoding="async" src="/assets/images/projects/united-palm-green/main.jpg" alt="United Palm Greens">
           </div>
           <div class="featured-badge">
             <div class="featured-badge-tag">Featured Development</div>
@@ -836,7 +836,7 @@
     return `
       <div class="client-gallery-item ${sizeClass}">
         ${image
-          ? `<img src="${image}" alt="${caption}">`
+          ? `<img src="${image}" alt="${caption}" loading="lazy" decoding="async">`
           : `<div class="gallery-svg-placeholder">${getProjectSVG(theme)}</div>`}
         <div class="client-gallery-caption">
           <div class="cgc-name">${caption}</div>

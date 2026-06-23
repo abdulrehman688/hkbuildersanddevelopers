@@ -550,7 +550,7 @@
     function buildClientGalleryItem(caption, sub, image) {
       return `
         <div class="client-gallery-item gallery-item-md">
-          ${image ? `<img src="${image}" alt="${caption}">` : '<div style="background:#152844;"></div>'}
+          ${image ? `<img src="${image}" alt="${caption}" loading="lazy" decoding="async">` : '<div style="background:#152844;"></div>'}
           <div class="client-gallery-caption">
             <div class="cgc-name">${caption}</div>
             <div class="cgc-sub">${sub}</div>
@@ -570,7 +570,7 @@
       const row1 = document.getElementById('galleryRow1');
       row1.innerHTML = row1Items.map((item, i) =>
         `<div class="client-gallery-item ${sizes[i % sizes.length]}">
-          ${item.image ? `<img src="${item.image}" alt="${item.caption}">` : '<div style="background:#152844;"></div>'}
+          ${item.image ? `<img src="${item.image}" alt="${item.caption}" loading="lazy" decoding="async">` : '<div style="background:#152844;"></div>'}
           <div class="client-gallery-caption">
             <div class="cgc-name">${item.caption}</div>
             <div class="cgc-sub">${item.sub}</div>
@@ -584,7 +584,7 @@
       const row2 = document.getElementById('galleryRow2');
       row2.innerHTML = row2Full.map((item, i) =>
         `<div class="client-gallery-item ${sizes[(i + 3) % sizes.length]}">
-          ${item.image ? `<img src="${item.image}" alt="${item.caption}">` : '<div style="background:#152844;"></div>'}
+          ${item.image ? `<img src="${item.image}" alt="${item.caption}" loading="lazy" decoding="async">` : '<div style="background:#152844;"></div>'}
           <div class="client-gallery-caption">
             <div class="cgc-name">${item.caption}</div>
             <div class="cgc-sub">${item.sub}</div>

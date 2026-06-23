@@ -322,7 +322,7 @@
   <!-- HERO -->
   <div class="page-hero">
     <div class="page-hero-bg"></div>
-    <img class="page-hero-photo" id="pageHeroPhoto" src="" alt="">
+    <img class="page-hero-photo" id="pageHeroPhoto" src="" alt="" loading="eager" fetchpriority="high">
     <div class="page-hero-photo-overlay"></div>
     <div class="page-hero-grid"></div>
     <div class="page-hero-content">
@@ -348,13 +348,12 @@
       <div class="reveal">
         <div class="fs-visual">
           <div class="fs-placeholder">
-            <img id="fsImage" src="" alt="Client story" style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0;">
+            <img id="fsImage" src="" alt="Client story" loading="lazy" style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0;">
             <div class="fs-quote-badge"><div class="fs-quote-badge-tag">Client Story</div><div class="fs-quote-badge-name">Verified Homeowner</div></div>
           </div>
         </div>
       </div>
       <div class="reveal reveal-delay-1">
-        <div class="fs-project-tag"><div class="fs-dot"></div><span>Featured Client Story</span></div>
         <h2 class="section-title">A Dream Home,<br><em>Realized</em></h2>
         <div class="fs-stars">★★★★★</div>
         <p class="fs-quote">"From the first site visit to the final handover, HK Builders made us feel like family. They were patient with our questions, transparent about every detail, and genuinely cared that we found the right home for our family, not just any home."</p>
@@ -486,7 +485,7 @@
       grid.innerHTML = galleryItems.map((item,i)=>`
         <div class="gallery-item" data-index="${i}">
           <div class="gallery-item-inner" style="background:linear-gradient(160deg,#0e2040,#152844);position:relative;">
-            ${item.image?`<img src="${item.image}" alt="${item.caption||''}" style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0;">`:SVG[item.theme||'villa']}
+            ${item.image?`<img src="${item.image}" alt="${item.caption||''}" loading="lazy" decoding="async" style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0;">`:SVG[item.theme||'villa']}
           </div>
           <div class="gallery-overlay">
             <div class="gallery-caption">${item.caption}</div>
