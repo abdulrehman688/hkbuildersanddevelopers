@@ -512,22 +512,38 @@
     // Satisfied clients gallery (static fallback)
     function getStaticClientGallery() {
       return [
-        {caption: 'Handover Day', sub: 'United Palm Greens', image: null},
-        {caption: 'Site Walkthrough', sub: 'Falaknaz Wonder City', image: null},
-        {caption: 'Welcoming New Residents', sub: 'United Palm Greens', image: null},
-        {caption: 'Documentation Signing', sub: 'Falaknaz Hills View', image: null},
-        {caption: 'Key Handover Ceremony', sub: 'Falaknaz Overseas Block', image: null},
-        {caption: 'Client Family Visit', sub: 'United Palm Greens', image: null},
-        {caption: 'Consultation Meeting', sub: 'HK Office, Karachi', image: null},
-        {caption: 'Project Site Tour', sub: 'Falaknaz Wonder City', image: null},
-        {caption: 'Celebrating Success', sub: 'United Palm Greens', image: null},
-        {caption: 'Final Walkthrough', sub: 'Falaknaz Hills View', image: null},
-        {caption: 'Overseas Client Visit', sub: 'Falaknaz Overseas Block', image: null},
-        {caption: 'Community Welcome', sub: 'United Palm Greens', image: null}
+        {caption:'Satisfied Client',sub:'HK Builders & Developers',image:'/assets/images/satisfiedclients/1.jpeg'},
+        {caption:'Satisfied Client',sub:'HK Builders & Developers',image:'/assets/images/satisfiedclients/2.jpeg'},
+        {caption:'Satisfied Client',sub:'HK Builders & Developers',image:'/assets/images/satisfiedclients/3.jpeg'},
+        {caption:'Satisfied Client',sub:'HK Builders & Developers',image:'/assets/images/satisfiedclients/4.jpeg'},
+        {caption:'Satisfied Client',sub:'HK Builders & Developers',image:'/assets/images/satisfiedclients/5.jpeg'},
+        {caption:'Satisfied Client',sub:'HK Builders & Developers',image:'/assets/images/satisfiedclients/6.jpeg'},
+        {caption:'Satisfied Client',sub:'HK Builders & Developers',image:'/assets/images/satisfiedclients/7.jpeg'},
+        {caption:'Satisfied Client',sub:'HK Builders & Developers',image:'/assets/images/satisfiedclients/8.jpeg'},
+        {caption:'Satisfied Client',sub:'HK Builders & Developers',image:'/assets/images/satisfiedclients/9.jpeg'},
+        {caption:'Satisfied Client',sub:'HK Builders & Developers',image:'/assets/images/satisfiedclients/10.jpeg'},
+        {caption:'Satisfied Client',sub:'HK Builders & Developers',image:'/assets/images/satisfiedclients/11.jpeg'},
+        {caption:'Satisfied Client',sub:'HK Builders & Developers',image:'/assets/images/satisfiedclients/12.jpeg'},
+        {caption:'Satisfied Client',sub:'HK Builders & Developers',image:'/assets/images/satisfiedclients/13.jpeg'},
+        {caption:'Satisfied Client',sub:'HK Builders & Developers',image:'/assets/images/satisfiedclients/14.jpeg'},
+        {caption:'Satisfied Client',sub:'HK Builders & Developers',image:'/assets/images/satisfiedclients/15.jpeg'},
+        {caption:'Satisfied Client',sub:'HK Builders & Developers',image:'/assets/images/satisfiedclients/16.jpeg'},
+        {caption:'Satisfied Client',sub:'HK Builders & Developers',image:'/assets/images/satisfiedclients/17.jpeg'},
+        {caption:'Satisfied Client',sub:'HK Builders & Developers',image:'/assets/images/satisfiedclients/18.jpeg'},
+        {caption:'Satisfied Client',sub:'HK Builders & Developers',image:'/assets/images/satisfiedclients/19.jpeg'},
+        {caption:'Satisfied Client',sub:'HK Builders & Developers',image:'/assets/images/satisfiedclients/20.jpeg'},
+        {caption:'Satisfied Client',sub:'HK Builders & Developers',image:'/assets/images/satisfiedclients/21.jpeg'},
+        {caption:'Satisfied Client',sub:'HK Builders & Developers',image:'/assets/images/satisfiedclients/22.jpeg'},
+        {caption:'Satisfied Client',sub:'HK Builders & Developers',image:'/assets/images/satisfiedclients/23.jpeg'},
+        {caption:'Satisfied Client',sub:'HK Builders & Developers',image:'/assets/images/satisfiedclients/24.jpeg'},
+        {caption:'Satisfied Client',sub:'HK Builders & Developers',image:'/assets/images/satisfiedclients/25.jpeg'},
+        {caption:'Satisfied Client',sub:'HK Builders & Developers',image:'/assets/images/satisfiedclients/26.jpeg'},
+        {caption:'Satisfied Client',sub:'HK Builders & Developers',image:'/assets/images/satisfiedclients/27.jpeg'},
+        {caption:'Satisfied Client',sub:'HK Builders & Developers',image:'/assets/images/satisfiedclients/28.jpeg'}
       ];
     }
 
-    async function loadClientGallery() {
+    function loadClientGallery() {
       return getStaticClientGallery();
     }
 
@@ -577,9 +593,7 @@
       ).join('');
     }
 
-    loadClientGallery().then(items => {
-      renderClientGallery(items);
-    }).catch(err => console.error('Failed to load clients gallery:', err));
+    renderClientGallery(loadClientGallery());
 
     function toggleMobile() {
       const menu = document.getElementById('mobileMenu');
