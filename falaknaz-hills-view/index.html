@@ -239,8 +239,8 @@
         if(data.success){
           document.getElementById('enquiryForm').style.display='none';
           document.getElementById('enquirySuccess').classList.add('show');
-        }else{btn.textContent='Send Enquiry, Falaknaz Hills View →';btn.disabled=false;alert('Something went wrong. Please try again or WhatsApp us directly.');}
-      }catch(e){btn.textContent='Send Enquiry, Falaknaz Hills View →';btn.disabled=false;alert('Network error. Please check your connection and try again.');}
+        }else{btn.textContent='Send Enquiry, Falaknaz Hills View →';btn.disabled=false;btn.textContent=btn.textContent.replace('Sending…','Try again →');}
+      }catch(e){btn.textContent='Send Enquiry, Falaknaz Hills View →';btn.disabled=false;btn.textContent=btn.textContent.replace('Sending…','Try again →');}
     };bindReveal();bindCursor();
   </script>
 </body>

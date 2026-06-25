@@ -522,11 +522,11 @@
           document.getElementById('contactSuccess').classList.add('show');
         }else{
           btn.textContent='Send Message →';btn.disabled=false;
-          alert('Something went wrong. Please try again or WhatsApp us directly.');
+          btn.textContent=btn.textContent.replace('Sending…','Try again →');
         }
       }catch(e){
         btn.textContent='Send Message →';btn.disabled=false;
-        alert('Network error. Please check your connection and try again.');
+        btn.textContent=btn.textContent.replace('Sending…','Try again →');
       }
     }
 
