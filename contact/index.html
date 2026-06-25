@@ -507,9 +507,11 @@
           body:JSON.stringify({
             access_key:'11bb7533-30f5-4e46-8376-cbeb028ad15a',
             subject:'New Contact Enquiry - HK Builders & Developers',
+            from_name:'HK Builders & Developers Website',
+            botcheck:false,
             name:n,
             phone:ph,
-            email:document.getElementById('cEmail').value.trim()||'Not provided',
+            email:document.getElementById('cEmail').value.trim()||'',
             interest:document.getElementById('cInterest').value||'Not specified',
             message:m
           })
@@ -520,11 +522,11 @@
           document.getElementById('contactSuccess').classList.add('show');
         }else{
           btn.textContent='Send Message →';btn.disabled=false;
-          alert('DEBUG: ' + JSON.stringify(data));
+          alert('Something went wrong. Please try again or WhatsApp us directly.');
         }
       }catch(e){
         btn.textContent='Send Message →';btn.disabled=false;
-        alert('DEBUG catch: ' + e.message);
+        alert('Network error. Please check your connection and try again.');
       }
     }
 
