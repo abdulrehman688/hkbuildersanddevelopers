@@ -74,12 +74,14 @@ if ($section === 'agent') {
     require_once APP_ROOT . '/app/controllers/AgentController.php';
     $ctrl = new AgentController();
     match($action) {
-        'leads'    => $ctrl->myLeads(),
-        'pool'     => $ctrl->leadPool(),
-        'lead'     => $sub === 'convert' ? $ctrl->convertClient((int)$param) : $ctrl->leadDetail((int)$param),
-        'claim'    => $ctrl->claimLead((int)$param),
-        'password' => $ctrl->changePassword(),
-        default    => $ctrl->dashboard(),
+        'leads'        => $ctrl->myLeads(),
+        'pool'         => $ctrl->leadPool(),
+        'lead'         => $sub === 'convert' ? $ctrl->convertClient((int)$param) : $ctrl->leadDetail((int)$param),
+        'claim'        => $ctrl->claimLead((int)$param),
+        'team'         => $ctrl->myTeam(),
+        'team-agent'   => $ctrl->teamAgentDetail((int)$param),
+        'password'     => $ctrl->changePassword(),
+        default        => $ctrl->dashboard(),
     };
     exit;
 }

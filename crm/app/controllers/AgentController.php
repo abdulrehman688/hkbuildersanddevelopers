@@ -132,6 +132,64 @@ class AgentController {
         exit;
     }
 
+    public function myTeam(): void {
+        Security::requireLogin();
+        if ($_SESSION['user_role'] !== 'sales_manager') {
+            header('Location: ' . APP_URL . '/agent/dashboard');
+            exit;
+        }
+        require_once APP_ROOT . '/app/models/Team.php';
+        $teamModel   = new Team();
+        $myTeam      = $teamModel->getManagerTeam((int)$_SESSION['user_id']);
+        $teamMembers = $myTeam ? $teamModel->getMembers((int)$myTeam['id']) : [];
+        $teamStats   = $myTeam ? $teamModel->getTeamStats((int)$myTeam['id']) : [];
+        $months      = $this->user->getAvailableMonths();
+
+        // Monthly trend per team member for chart
+        $memberTrends = [];
+        foreach ($teamMembers as $m) {
+            $memberTrends[$m['id']] = $this->user->getAgentMonthlyTrend((int)$m['id']);
+        }
+
+        require_once __DIR__ . '/../views/agent/my_team.php';
+    }
+
+    public function teamAgentDetail(int $agentId): void {
+        Security::requireLogin();
+        if ($_SESSION['user_role'] !== 'sales_manager') {
+            header('Location: ' . APP_URL . '/agent/dashboard');
+            exit;
+        }
+        require_once APP_ROOT . '/app/models/Team.php';
+        $teamModel = new Team();
+        $myTeam    = $teamModel->getManagerTeam((int)$_SESSION['user_id']);
+
+        // Security: agent must belong to this manager's team
+        if (!$myTeam) {
+            $_SESSION['error'] = 'You are not assigned to a team.';
+            header('Location: ' . APP_URL . '/agent/dashboard');
+            exit;
+        }
+
+        $members   = $teamModel->getMembers((int)$myTeam['id']);
+        $memberIds = array_column($members, 'id');
+        if (!in_array($agentId, array_map('intval', $memberIds))) {
+            $_SESSION['error'] = 'This agent is not in your team.';
+            header('Location: ' . APP_URL . '/agent/team');
+            exit;
+        }
+
+        $detail         = $this->user->getAgentDetail($agentId, $_GET['month'] ?? '');
+        $agentLeads     = $this->user->getAgentLeads($agentId, $_GET['month'] ?? '');
+        $months         = $this->user->getAvailableMonths();
+        $monthlyTrend   = $this->user->getAgentMonthlyTrend($agentId);
+        $followUpStats  = $this->user->getAgentFollowUpStats($agentId);
+        $sourceBreakdown = $this->user->getAgentSourceBreakdown($agentId);
+        $wonDeals       = $this->user->getAgentWonDeals($agentId);
+
+        require_once __DIR__ . '/../views/agent/team_agent_detail.php';
+    }
+
     public function convertClient(int $id): void {
         Security::requireLogin();
         require_once APP_ROOT . '/app/models/Client.php';
