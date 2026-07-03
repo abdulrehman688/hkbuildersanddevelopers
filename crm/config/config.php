@@ -1,7 +1,7 @@
 ﻿<?php
 // ============================================================
 // HK Builders CRM â€” Configuration
-// LOCAL:      http://localhost/CRM/public  (development)
+// LOCAL:      http://localhost/CRM  (development)
 // PRODUCTION: https://hkbuildersanddevelopers.com/crm (production)
 // ============================================================
 

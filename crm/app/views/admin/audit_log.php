@@ -28,6 +28,8 @@ $actionLabels = [
     'login_remember_me'      => ['Auto Login',          '#3b82f6'],
     'logout'                 => ['Logout',              '#6b7280'],
     'password_changed'       => ['Password Changed',   '#8b5cf6'],
+    'task_marked_done'       => ['Task Done',          '#10b981'],
+    'task_unmarked_done'     => ['Task Undone',        '#f59e0b'],
 ];
 
 $pageTitle  = 'Audit Log';
