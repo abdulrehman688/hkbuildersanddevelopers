@@ -77,7 +77,7 @@ ob_start();
                 <h3 style="font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:600;color:var(--navy);margin:0 0 8px"><?= Security::e($notice['title']) ?></h3>
                 <p style="font-size:13px;color:var(--text-muted);line-height:1.7;margin:0;white-space:pre-wrap"><?= Security::e($notice['message']) ?></p>
                 <?php if ($notice['attachment']): ?>
-                <a href="<?= APP_URL ?>/uploads/notices/<?= Security::e($notice['attachment']) ?>" target="_blank"
+                <a href="<?= APP_URL ?>/uploads/notices/<?= Security::e($notice['attachment']) ?>" download
                    style="display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--gold);font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-top:12px">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width:13px;height:13px"><path stroke-linecap="round" stroke-linejoin="round" d="M18.375 12.739l-7.693 7.693a4.5 4.5 0 01-6.364-6.364l10.94-10.94A3 3 0 1119.5 7.372L8.552 18.32m.009-.01l-.01.01m5.699-9.941l-7.81 7.81a1.5 1.5 0 002.112 2.13"/></svg>
                     Download Attachment
