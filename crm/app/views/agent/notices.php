@@ -5,7 +5,14 @@ require_once __DIR__ . '/../../models/Notice.php';
 
 $noticeModel = new Notice();
 $userId      = (int)$_SESSION['user_id'];
-$notices     = $noticeModel->getForUser($userId);
+$dbError     = null;
+
+try {
+    $notices = $noticeModel->getForUser($userId);
+} catch (PDOException $e) {
+    $notices = [];
+    $dbError = true;
+}
 
 $pendingTasks   = array_filter($notices, fn($n) => $n['type'] === 'task' && !$n['marked_done_at']);
 $completedTasks = array_filter($notices, fn($n) => $n['type'] === 'task' &&  $n['marked_done_at']);

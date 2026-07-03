@@ -92,8 +92,12 @@
             </span>
             <?php
             if (!isset($noticePendingCount)) {
-                require_once APP_ROOT . '/app/models/Notice.php';
-                $noticePendingCount = (new Notice())->getPendingTaskCount((int)$_SESSION['user_id']);
+                try {
+                    require_once APP_ROOT . '/app/models/Notice.php';
+                    $noticePendingCount = (new Notice())->getPendingTaskCount((int)$_SESSION['user_id']);
+                } catch (PDOException $e) {
+                    $noticePendingCount = 0;
+                }
             }
             if ($noticePendingCount > 0):
             ?>

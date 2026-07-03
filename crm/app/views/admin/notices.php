@@ -3,21 +3,35 @@ Security::requireAdmin();
 require_once __DIR__ . '/../../../config/database.php';
 require_once __DIR__ . '/../../models/Notice.php';
 
-$noticeModel = new Notice();
-$tab         = $_GET['tab'] ?? 'notices';
-$notices     = $noticeModel->getAll();
+$noticeModel  = new Notice();
+$tab          = $_GET['tab'] ?? 'notices';
+$dbError      = null;
 
-$totalNotices   = count($notices);
-$totalTasks     = count(array_filter($notices, fn($n) => $n['type'] === 'task'));
-$totalAnnounce  = $totalNotices - $totalTasks;
+try {
+    $notices = $noticeModel->getAll();
+} catch (PDOException $e) {
+    $notices = [];
+    $dbError = 'Database table missing. Please run <strong>migration_v3.sql</strong> on Hostinger first.';
+}
+
+$totalNotices  = count($notices);
+$totalTasks    = count(array_filter($notices, fn($n) => $n['type'] === 'task'));
+$totalAnnounce = $totalNotices - $totalTasks;
 
 // Activity feed
-$actPage = max(1, (int)($_GET['page'] ?? 1));
-$actPer  = 60;
-if ($tab === 'activity') {
-    $actTotal  = $noticeModel->getActivityFeedCount();
-    $actPages  = (int)ceil($actTotal / $actPer);
-    $actEvents = $noticeModel->getActivityFeed($actPage, $actPer);
+$actPage   = max(1, (int)($_GET['page'] ?? 1));
+$actPer    = 60;
+$actTotal  = 0;
+$actPages  = 1;
+$actEvents = [];
+if ($tab === 'activity' && !$dbError) {
+    try {
+        $actTotal  = $noticeModel->getActivityFeedCount();
+        $actPages  = (int)ceil($actTotal / $actPer);
+        $actEvents = $noticeModel->getActivityFeed($actPage, $actPer);
+    } catch (PDOException $e) {
+        $dbError = 'Could not load activity feed.';
+    }
 }
 
 $pageTitle  = 'Notices & Activity';
@@ -46,6 +60,9 @@ $leadLabels = [
 ];
 ?>
 
+<?php if ($dbError): ?>
+    <div class="alert alert-error"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"/></svg><?= $dbError ?></div>
+<?php endif; ?>
 <?php if (!empty($_SESSION['success'])): ?>
     <div class="alert alert-success"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg><?= Security::e($_SESSION['success']) ?></div>
     <?php unset($_SESSION['success']); ?>
