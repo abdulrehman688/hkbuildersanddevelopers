@@ -60,6 +60,7 @@ if ($section === 'admin') {
         'teams'        => $ctrl->teams(),
         'clients'      => $ctrl->clients(),
         'client'       => $ctrl->clientDetail((int)$param),
+        'notices'      => $ctrl->notices(),
         'reports'      => $ctrl->reports(),
         'csv-template' => $ctrl->downloadCsvTemplate(),
         'password'     => $ctrl->changePassword(),
@@ -80,6 +81,7 @@ if ($section === 'agent') {
         'claim'        => $ctrl->claimLead((int)$param),
         'team'         => $ctrl->myTeam(),
         'team-agent'   => $ctrl->teamAgentDetail((int)$param),
+        'notices'      => $ctrl->notices(),
         'password'     => $ctrl->changePassword(),
         default        => $ctrl->dashboard(),
     };

@@ -309,4 +309,33 @@ class AgentController {
 
         require_once __DIR__ . '/../views/agent/change_password.php';
     }
+
+    // ---- Notices ------------------------------------------------
+
+    public function notices(): void {
+        Security::requireAgent();
+        require_once APP_ROOT . '/app/models/Notice.php';
+        $noticeModel = new Notice();
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            if (!Security::verifyCsrfToken($_POST['csrf_token'] ?? '')) {
+                header('Location: ' . APP_URL . '/agent/notices');
+                exit;
+            }
+
+            $action   = $_POST['action']    ?? '';
+            $noticeId = (int)($_POST['notice_id'] ?? 0);
+
+            if ($action === 'mark_done' && $noticeId) {
+                $noticeModel->markDone($noticeId, (int)$_SESSION['user_id']);
+            } elseif ($action === 'unmark_done' && $noticeId) {
+                $noticeModel->unmarkDone($noticeId, (int)$_SESSION['user_id']);
+            }
+
+            header('Location: ' . APP_URL . '/agent/notices');
+            exit;
+        }
+
+        require_once __DIR__ . '/../views/agent/notices.php';
+    }
 }

@@ -531,6 +531,82 @@ class AdminController {
         require_once __DIR__ . '/../views/admin/client_detail.php';
     }
 
+    // ---- Notices & Activity Feed --------------------------------
+
+    public function notices(): void {
+        require_once APP_ROOT . '/app/models/Notice.php';
+        $noticeModel = new Notice();
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            if (!Security::verifyCsrfToken($_POST['csrf_token'] ?? '')) {
+                $_SESSION['error'] = 'Invalid request.';
+                header('Location: ' . APP_URL . '/admin/notices');
+                exit;
+            }
+
+            $action = $_POST['action'] ?? '';
+
+            if ($action === 'create') {
+                $title   = trim($_POST['title']   ?? '');
+                $message = trim($_POST['message'] ?? '');
+                $type    = in_array($_POST['type'] ?? '', ['announcement', 'task']) ? $_POST['type'] : 'announcement';
+
+                if ($title === '' || $message === '') {
+                    $_SESSION['error'] = 'Title and message are required.';
+                    header('Location: ' . APP_URL . '/admin/notices');
+                    exit;
+                }
+
+                $attachment = null;
+                if (!empty($_FILES['attachment']['name'])) {
+                    $file    = $_FILES['attachment'];
+                    $allowed = ['pdf','doc','docx','xls','xlsx','png','jpg','jpeg','gif','zip'];
+                    $ext     = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+                    if ($file['error'] !== UPLOAD_ERR_OK || !in_array($ext, $allowed)) {
+                        $_SESSION['error'] = 'Invalid attachment. Allowed: ' . implode(', ', $allowed);
+                        header('Location: ' . APP_URL . '/admin/notices');
+                        exit;
+                    }
+                    if ($file['size'] > 10 * 1024 * 1024) {
+                        $_SESSION['error'] = 'Attachment must be under 10 MB.';
+                        header('Location: ' . APP_URL . '/admin/notices');
+                        exit;
+                    }
+                    $uploadDir = APP_ROOT . '/uploads/notices/';
+                    if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
+                    $savedName = date('Ymd_His') . '_' . bin2hex(random_bytes(4)) . '.' . $ext;
+                    if (!move_uploaded_file($file['tmp_name'], $uploadDir . $savedName)) {
+                        $_SESSION['error'] = 'Failed to save attachment.';
+                        header('Location: ' . APP_URL . '/admin/notices');
+                        exit;
+                    }
+                    $attachment = $savedName;
+                }
+
+                $noticeModel->create([
+                    'type'       => $type,
+                    'title'      => $title,
+                    'message'    => $message,
+                    'attachment' => $attachment,
+                    'created_by' => (int)$_SESSION['user_id'],
+                ]);
+                $_SESSION['success'] = 'Notice posted successfully.';
+
+            } elseif ($action === 'delete') {
+                $id = (int)($_POST['notice_id'] ?? 0);
+                if ($id) {
+                    $noticeModel->delete($id);
+                    $_SESSION['success'] = 'Notice deleted.';
+                }
+            }
+
+            header('Location: ' . APP_URL . '/admin/notices');
+            exit;
+        }
+
+        require_once __DIR__ . '/../views/admin/notices.php';
+    }
+
     public function reports(): void {
         if (($_GET['export'] ?? '') === 'csv') {
             $this->exportLeadsCsv();
