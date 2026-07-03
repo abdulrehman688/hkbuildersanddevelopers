@@ -85,7 +85,7 @@ ob_start();
                 <?php endif; ?>
             </div>
             <form method="POST" action="<?= APP_URL ?>/agent/notices" style="flex-shrink:0">
-                <input type="hidden" name="csrf_token" value="<?= Security::csrfToken() ?>">
+                <?= Security::csrfField() ?>
                 <input type="hidden" name="action"     value="mark_done">
                 <input type="hidden" name="notice_id"  value="<?= $notice['id'] ?>">
                 <button type="submit" class="btn btn-danger">
@@ -152,7 +152,7 @@ ob_start();
                 <h3 style="font-family:'Cormorant Garamond',serif;font-size:16px;font-weight:600;color:var(--text-muted);margin:0;text-decoration:line-through;opacity:.7"><?= Security::e($notice['title']) ?></h3>
             </div>
             <form method="POST" action="<?= APP_URL ?>/agent/notices">
-                <input type="hidden" name="csrf_token" value="<?= Security::csrfToken() ?>">
+                <?= Security::csrfField() ?>
                 <input type="hidden" name="action"     value="unmark_done">
                 <input type="hidden" name="notice_id"  value="<?= $notice['id'] ?>">
                 <button type="submit" class="btn btn-secondary btn-sm">Undo</button>
