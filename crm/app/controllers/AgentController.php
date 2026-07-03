@@ -328,8 +328,12 @@ class AgentController {
 
             if ($action === 'mark_done' && $noticeId) {
                 $noticeModel->markDone($noticeId, (int)$_SESSION['user_id']);
+                require_once APP_ROOT . '/app/helpers/AuditLog.php';
+                AuditLog::log('task_marked_done', (int)$_SESSION['user_id'], 'notice', $noticeId);
             } elseif ($action === 'unmark_done' && $noticeId) {
                 $noticeModel->unmarkDone($noticeId, (int)$_SESSION['user_id']);
+                require_once APP_ROOT . '/app/helpers/AuditLog.php';
+                AuditLog::log('task_unmarked_done', (int)$_SESSION['user_id'], 'notice', $noticeId);
             }
 
             header('Location: ' . APP_URL . '/agent/notices');

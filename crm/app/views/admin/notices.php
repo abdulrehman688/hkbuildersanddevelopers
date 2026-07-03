@@ -9,8 +9,10 @@ $dbError     = null;
 
 try {
     $notices = $noticeModel->getAll();
+    $allCompletions = $noticeModel->getAllCompletions();
 } catch (PDOException $e) {
     $notices = [];
+    $allCompletions = [];
     $dbError = 'Database tables missing. Please run migration_v3.sql first.';
 }
 
@@ -45,6 +47,8 @@ $auditLabels = [
     'login_remember_me'          => ['Auto Login',        '#3b82f6'],
     'logout'                     => ['Logout',            '#6b7280'],
     'password_changed'           => ['Password Changed',  '#8b5cf6'],
+    'task_marked_done'           => ['Task Done',         '#10b981'],
+    'task_unmarked_done'         => ['Task Undone',       '#f59e0b'],
 ];
 $leadLabels = [
     'note'          => ['Note Added',     '#3b82f6'],
@@ -195,13 +199,22 @@ ob_start();
                     <?php endif; ?>
                 </td>
                 <td>
-                    <?php if ($isTask): ?>
-                        <div style="display:flex;align-items:center;gap:8px">
+                    <?php if ($isTask):
+                        $completions = $allCompletions[$notice['id']] ?? [];
+                    ?>
+                        <div style="display:flex;align-items:center;gap:8px;margin-bottom:<?= !empty($completions) ? '6px' : '0' ?>">
                             <div class="conv-bar">
                                 <div class="conv-fill" style="width:<?= $pct ?>%;background:<?= $pct >= 100 ? '#10b981' : ($pct > 50 ? '#f59e0b' : '#ef4444') ?>"></div>
                             </div>
                             <span style="font-size:12px;font-weight:600;color:var(--navy)"><?= $doneCount ?>/<?= $totalStaff ?></span>
                         </div>
+                        <?php foreach ($completions as $c): ?>
+                            <div style="font-size:11px;color:var(--text-muted);line-height:1.6">
+                                <span style="color:#10b981">&#10003;</span>
+                                <?= Security::e($c['name']) ?>
+                                <span style="opacity:.6">· <?= date('d M, g:i A', strtotime($c['marked_done_at'])) ?></span>
+                            </div>
+                        <?php endforeach; ?>
                     <?php else: ?>
                         <span style="color:var(--text-muted);font-size:12px">—</span>
                     <?php endif; ?>

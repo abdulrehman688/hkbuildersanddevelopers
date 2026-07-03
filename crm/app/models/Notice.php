@@ -76,6 +76,32 @@ class Notice {
         $this->db->prepare("DELETE FROM notices WHERE id = :id")->execute([':id' => $id]);
     }
 
+    public function getCompletions(int $noticeId): array {
+        $stmt = $this->db->prepare("
+            SELECT u.name, nc.marked_done_at
+            FROM notice_completions nc
+            JOIN users u ON u.id = nc.user_id
+            WHERE nc.notice_id = :nid
+            ORDER BY nc.marked_done_at DESC
+        ");
+        $stmt->execute([':nid' => $noticeId]);
+        return $stmt->fetchAll();
+    }
+
+    public function getAllCompletions(): array {
+        $rows = $this->db->query("
+            SELECT nc.notice_id, u.name, nc.marked_done_at
+            FROM notice_completions nc
+            JOIN users u ON u.id = nc.user_id
+            ORDER BY nc.marked_done_at DESC
+        ")->fetchAll();
+        $grouped = [];
+        foreach ($rows as $r) {
+            $grouped[$r['notice_id']][] = $r;
+        }
+        return $grouped;
+    }
+
     public function getPendingTaskCount(int $userId): int {
         $stmt = $this->db->prepare("
             SELECT COUNT(*) FROM notices n
