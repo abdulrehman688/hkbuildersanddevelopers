@@ -8,6 +8,7 @@ $lead = new Lead();
 $search   = trim($_GET['search']   ?? '');
 $statusId = (int)($_GET['status']   ?? 0);
 $priority = $_GET['priority'] ?? '';
+$claimed  = $_GET['claimed']  ?? '';
 $dateFrom = $_GET['date_from'] ?? '';
 $dateTo   = $_GET['date_to']   ?? '';
 $page     = max(1, (int)($_GET['page'] ?? 1));
@@ -18,6 +19,7 @@ $filters = [
     'search'    => $search,
     'status_id' => $statusId ?: null,
     'priority'  => in_array($priority, ['hot','warm','cold']) ? $priority : null,
+    'claimed'   => in_array($claimed, ['assigned','unassigned']) ? $claimed : null,
     'date_from' => $dateFrom ?: null,
     'date_to'   => $dateTo   ?: null,
     'limit'     => $perPage,
@@ -35,6 +37,7 @@ function filtersUrl(array $overrides = []): string {
         'search'    => $_GET['search']   ?? '',
         'status'    => $_GET['status']   ?? '',
         'priority'  => $_GET['priority'] ?? '',
+        'claimed'   => $_GET['claimed']  ?? '',
         'date_from' => $_GET['date_from'] ?? '',
         'date_to'   => $_GET['date_to']   ?? '',
         'page'      => $_GET['page']      ?? '',
@@ -112,6 +115,16 @@ ob_start();
                 </select>
             </div>
 
+            <!-- Assignment -->
+            <div class="filter-select-wrap">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"/></svg>
+                <select name="claimed" onchange="this.form.submit()">
+                    <option value="">All Leads</option>
+                    <option value="assigned" <?= $claimed === 'assigned' ? 'selected' : '' ?>>Assigned</option>
+                    <option value="unassigned" <?= $claimed === 'unassigned' ? 'selected' : '' ?>>Unassigned</option>
+                </select>
+            </div>
+
             <!-- Date From -->
             <div class="filter-date-wrap">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5"/></svg>
@@ -130,7 +143,7 @@ ob_start();
             <button type="submit" class="btn btn-primary btn-sm">Search</button>
 
             <!-- Clear -->
-            <?php if ($search || $statusId || $priority || $dateFrom || $dateTo): ?>
+            <?php if ($search || $statusId || $priority || $claimed || $dateFrom || $dateTo): ?>
                 <a href="<?= APP_URL ?>/admin/leads" class="btn btn-secondary btn-sm">Clear</a>
             <?php endif; ?>
         </div>
@@ -205,7 +218,7 @@ ob_start();
         <?php if (empty($leads)): ?>
             <tr><td colspan="9" class="empty-row">
                 No leads found.
-                <?php if ($search || $statusId || $priority || $dateFrom || $dateTo): ?>
+                <?php if ($search || $statusId || $priority || $claimed || $dateFrom || $dateTo): ?>
                     <a href="<?= APP_URL ?>/admin/leads">Clear filters</a>
                 <?php else: ?>
                     <a href="<?= APP_URL ?>/admin/leads?action=add">Add your first lead</a>

@@ -215,6 +215,11 @@ class Lead {
             $where[] = 'DATE(l.created_at) <= ?';
             $params[] = $dateTo;
         }
+        if (($opts['claimed'] ?? '') === 'assigned') {
+            $where[] = 'l.assigned_to IS NOT NULL';
+        } elseif (($opts['claimed'] ?? '') === 'unassigned') {
+            $where[] = 'l.assigned_to IS NULL';
+        }
 
         $sql = "
             SELECT l.*, COALESCE(l.name,'Unknown') AS display_name,
@@ -396,6 +401,11 @@ class Lead {
         if (!empty($opts['date_to'])) {
             $where[] = 'DATE(l.created_at) <= ?';
             $params[] = $opts['date_to'];
+        }
+        if (($opts['claimed'] ?? '') === 'assigned') {
+            $where[] = 'l.assigned_to IS NOT NULL';
+        } elseif (($opts['claimed'] ?? '') === 'unassigned') {
+            $where[] = 'l.assigned_to IS NULL';
         }
 
         $stmt = $this->db->prepare(
