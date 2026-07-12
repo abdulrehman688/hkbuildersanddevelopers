@@ -6,7 +6,9 @@
 // ============================================================
 
 // ---- Environment -------------------------------------------
-define('APP_ENV', ($_SERVER['SERVER_NAME'] ?? 'localhost') === 'localhost' ? 'development' : 'production');
+$_crm_host = $_SERVER['HTTP_HOST'] ?? $_SERVER['SERVER_NAME'] ?? 'localhost';
+define('APP_ENV', (str_starts_with($_crm_host, 'localhost') || $_crm_host === '127.0.0.1') ? 'development' : 'production');
+unset($_crm_host);
 
 // ---- Database -----------------------------------------------
 // PRODUCTION: replace with your Hostinger MySQL credentials
