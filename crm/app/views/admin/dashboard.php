@@ -5,8 +5,13 @@ require_once __DIR__ . '/../../models/Lead.php';
 $lead          = new Lead();
 $stats         = $lead->getDashboardStats();
 $recent        = $lead->getAll(['limit' => 10]);
-$fupCounts     = $lead->getAllFollowUpCounts();
-$overdueFollowUps = $lead->getAllFollowUps(['done' => false, 'date_to' => date('Y-m-d')]);
+try {
+    $fupCounts        = $lead->getAllFollowUpCounts();
+    $overdueFollowUps = $lead->getAllFollowUps(['done' => false, 'date_to' => date('Y-m-d')]);
+} catch (\Throwable $e) {
+    $fupCounts        = ['pending' => 0, 'overdue' => 0, 'today' => 0];
+    $overdueFollowUps = [];
+}
 $statuses = $lead->getStatuses();
 $wonId = $lostId = 0;
 foreach ($statuses as $s) {

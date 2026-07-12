@@ -19,7 +19,7 @@ $followUps = $leadModel->getAllFollowUps([
 ]);
 
 $counts  = $leadModel->getAllFollowUpCounts();
-$agents  = $userModel->getAll();
+$agents  = $userModel->getAllAgents();
 $now     = time();
 
 $pageTitle  = 'Follow-ups';

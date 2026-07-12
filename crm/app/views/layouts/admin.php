@@ -97,8 +97,9 @@
             <?php
             if (!isset($followUpOverdueCount)) {
                 try {
+                    require_once APP_ROOT . '/app/models/Lead.php';
                     $followUpOverdueCount = (new Lead())->getFollowUpCounts((int)$_SESSION['user_id'])['overdue'];
-                } catch (Exception $e) { $followUpOverdueCount = 0; }
+                } catch (\Throwable $e) { $followUpOverdueCount = 0; }
             }
             if ($followUpOverdueCount > 0): ?>
             <span style="background:#ef4444;color:#fff;border-radius:10px;padding:1px 7px;font-size:11px;font-weight:700;min-width:18px;text-align:center"><?= $followUpOverdueCount ?></span>
