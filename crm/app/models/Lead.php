@@ -197,6 +197,23 @@ class Lead {
         ];
     }
 
+    public function getSoonFollowUpCount(?int $agentId, int $minutes = 30): int {
+        $now    = date('Y-m-d H:i:s');
+        $soon   = date('Y-m-d H:i:s', strtotime("+{$minutes} minutes"));
+        $params = [$now, $soon];
+        $sql    = "SELECT COUNT(*) FROM follow_ups f
+                   JOIN leads l ON l.id = f.lead_id
+                   WHERE l.deleted_at IS NULL AND f.is_done = 0
+                     AND f.scheduled_at >= ? AND f.scheduled_at <= ?";
+        if ($agentId !== null) {
+            $sql     .= ' AND f.agent_id = ?';
+            $params[] = $agentId;
+        }
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
+        return (int)$stmt->fetchColumn();
+    }
+
     public function getAgentStats(int $agentId): array {
         $stmt = $this->db->prepare("
             SELECT
