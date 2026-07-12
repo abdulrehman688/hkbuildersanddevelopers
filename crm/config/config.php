@@ -7,7 +7,7 @@
 
 // ---- Environment -------------------------------------------
 $_crm_host = $_SERVER['HTTP_HOST'] ?? $_SERVER['SERVER_NAME'] ?? 'localhost';
-define('APP_ENV', (str_starts_with($_crm_host, 'localhost') || $_crm_host === '127.0.0.1') ? 'development' : 'production');
+define('APP_ENV', (strpos($_crm_host, 'hkbuildersanddevelopers.com') !== false) ? 'production' : 'development');
 unset($_crm_host);
 
 // ---- Database -----------------------------------------------
