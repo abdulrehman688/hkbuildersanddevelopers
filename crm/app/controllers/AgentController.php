@@ -310,6 +310,54 @@ class AgentController {
         require_once __DIR__ . '/../views/agent/change_password.php';
     }
 
+    // ---- Follow-ups page ----------------------------------------
+
+    public function followups(): void {
+        Security::requireLogin();
+        $agentId = (int)$_SESSION['user_id'];
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            if (!Security::verifyCsrfToken($_POST['csrf_token'] ?? '')) {
+                $_SESSION['error'] = 'Invalid request.';
+                header('Location: ' . APP_URL . '/agent/followups');
+                exit;
+            }
+
+            $action = $_POST['action'] ?? '';
+
+            if ($action === 'done_followup') {
+                $fupId  = (int)($_POST['followup_id'] ?? 0);
+                $leadId = (int)($_POST['lead_id']     ?? 0);
+                if ($fupId) {
+                    $done = $this->lead->markFollowUpDone($fupId, $agentId);
+                    if ($done && $leadId) {
+                        $this->lead->logActivity($leadId, $agentId, 'followup_done', 'Follow-up marked as done.');
+                    }
+                    $_SESSION['success'] = 'Follow-up marked as done.';
+                }
+            } elseif ($action === 'schedule_followup') {
+                $leadId = (int)($_POST['lead_id']      ?? 0);
+                $date   = trim($_POST['followup_date'] ?? '');
+                $time   = trim($_POST['followup_time'] ?? '10:00');
+                $note   = trim($_POST['followup_note'] ?? '');
+                if ($leadId && $date) {
+                    $scheduledAt = $date . ' ' . $time . ':00';
+                    $this->lead->scheduleFollowUp($leadId, $agentId, $scheduledAt, $note);
+                    $_SESSION['success'] = 'Follow-up scheduled for ' . date('d M Y, h:i A', strtotime($scheduledAt)) . '.';
+                } else {
+                    $_SESSION['error'] = 'Please select a lead and date.';
+                }
+            }
+
+            header('Location: ' . APP_URL . '/agent/followups');
+            exit;
+        }
+
+        $followUps = $this->lead->getAgentFollowUps($agentId);
+        $myLeads   = $this->lead->getAll(['agent_id' => $agentId, 'limit' => 200]);
+        require_once __DIR__ . '/../views/agent/followups.php';
+    }
+
     // ---- Notices ------------------------------------------------
 
     public function notices(): void {

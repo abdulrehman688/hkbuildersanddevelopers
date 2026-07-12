@@ -124,6 +124,79 @@ class Lead {
         return $stmt->fetchAll();
     }
 
+    public function getAllFollowUps(array $opts = []): array {
+        $where  = ['l.deleted_at IS NULL'];
+        $params = [];
+
+        if (!empty($opts['agent_id'])) {
+            $where[] = 'f.agent_id = ?';
+            $params[] = (int)$opts['agent_id'];
+        }
+
+        $done    = $opts['done'] ?? false;
+        $where[] = $done ? 'f.is_done = 1' : 'f.is_done = 0';
+
+        if (!empty($opts['date_from'])) {
+            $where[] = 'DATE(f.scheduled_at) >= ?';
+            $params[] = $opts['date_from'];
+        }
+        if (!empty($opts['date_to'])) {
+            $where[] = 'DATE(f.scheduled_at) <= ?';
+            $params[] = $opts['date_to'];
+        }
+
+        $stmt = $this->db->prepare("
+            SELECT f.*,
+                   COALESCE(l.name,'Unknown') AS lead_name,
+                   l.phone AS lead_phone,
+                   u.name AS agent_name
+            FROM follow_ups f
+            JOIN leads l ON l.id = f.lead_id
+            JOIN users  u ON u.id = f.agent_id
+            WHERE " . implode(' AND ', $where) . "
+            ORDER BY f.scheduled_at ASC
+            LIMIT 300
+        ");
+        $stmt->execute($params);
+        return $stmt->fetchAll();
+    }
+
+    public function getFollowUpCounts(int $agentId): array {
+        $stmt = $this->db->prepare("
+            SELECT
+                SUM(f.is_done = 0)                                         AS pending,
+                SUM(f.is_done = 0 AND f.scheduled_at < NOW())              AS overdue,
+                SUM(f.is_done = 0 AND DATE(f.scheduled_at) = CURDATE())    AS today
+            FROM follow_ups f
+            JOIN leads l ON l.id = f.lead_id
+            WHERE f.agent_id = ? AND l.deleted_at IS NULL
+        ");
+        $stmt->execute([$agentId]);
+        $row = $stmt->fetch();
+        return [
+            'pending' => (int)($row['pending'] ?? 0),
+            'overdue' => (int)($row['overdue'] ?? 0),
+            'today'   => (int)($row['today']   ?? 0),
+        ];
+    }
+
+    public function getAllFollowUpCounts(): array {
+        $row = $this->db->query("
+            SELECT
+                SUM(f.is_done = 0)                              AS pending,
+                SUM(f.is_done = 0 AND f.scheduled_at < NOW())   AS overdue,
+                SUM(f.is_done = 0 AND DATE(f.scheduled_at) = CURDATE()) AS today
+            FROM follow_ups f
+            JOIN leads l ON l.id = f.lead_id
+            WHERE l.deleted_at IS NULL
+        ")->fetch();
+        return [
+            'pending' => (int)($row['pending'] ?? 0),
+            'overdue' => (int)($row['overdue'] ?? 0),
+            'today'   => (int)($row['today']   ?? 0),
+        ];
+    }
+
     public function getAgentStats(int $agentId): array {
         $stmt = $this->db->prepare("
             SELECT

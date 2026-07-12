@@ -2,9 +2,11 @@
 Security::requireAdmin();
 require_once __DIR__ . '/../../models/Lead.php';
 
-$lead     = new Lead();
-$stats    = $lead->getDashboardStats();
-$recent   = $lead->getAll(['limit' => 10]);
+$lead          = new Lead();
+$stats         = $lead->getDashboardStats();
+$recent        = $lead->getAll(['limit' => 10]);
+$fupCounts     = $lead->getAllFollowUpCounts();
+$overdueFollowUps = $lead->getAllFollowUps(['done' => false, 'date_to' => date('Y-m-d')]);
 $statuses = $lead->getStatuses();
 $wonId = $lostId = 0;
 foreach ($statuses as $s) {
@@ -129,6 +131,44 @@ ob_start();
         </tbody>
     </table>
 </div>
+
+<?php if (!empty($overdueFollowUps)): ?>
+<div class="section-header" style="margin-top:28px">
+    <h2 style="display:flex;align-items:center;gap:8px">
+        Overdue Follow-ups
+        <span style="background:#fef2f2;color:#dc2626;font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px"><?= $fupCounts['overdue'] ?> overdue</span>
+        <?php if ($fupCounts['today'] > 0): ?>
+        <span style="background:#fffbeb;color:#d97706;font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px"><?= $fupCounts['today'] ?> today</span>
+        <?php endif; ?>
+    </h2>
+    <a href="<?= APP_URL ?>/admin/followups">View All &rarr;</a>
+</div>
+<div class="table-wrapper">
+    <table class="data-table">
+        <thead>
+            <tr><th>Agent</th><th>Lead</th><th>Scheduled</th><th>Note</th><th></th></tr>
+        </thead>
+        <tbody>
+        <?php foreach (array_slice($overdueFollowUps, 0, 8) as $f):
+            $overdue = strtotime($f['scheduled_at']) < time();
+        ?>
+        <tr>
+            <td style="font-size:13px;font-weight:500;color:var(--navy)"><?= Security::e($f['agent_name']) ?></td>
+            <td><a href="<?= APP_URL ?>/admin/lead/<?= (int)$f['lead_id'] ?>" class="lead-name"><?= Security::e($f['lead_name']) ?></a></td>
+            <td>
+                <span style="font-size:12px;color:<?= $overdue ? '#dc2626' : '#d97706' ?>;font-weight:600">
+                    <?= date('d M Y, h:i A', strtotime($f['scheduled_at'])) ?>
+                    <?php if ($overdue): ?><span style="display:block;font-size:10px;font-weight:700">OVERDUE</span><?php endif; ?>
+                </span>
+            </td>
+            <td style="font-size:12px;color:var(--text-muted)"><?= Security::e($f['note'] ?? '—') ?></td>
+            <td><a href="<?= APP_URL ?>/admin/agent/<?= (int)$f['agent_id'] ?>">Agent</a></td>
+        </tr>
+        <?php endforeach; ?>
+        </tbody>
+    </table>
+</div>
+<?php endif; ?>
 
 <?php
 $content = ob_get_clean();

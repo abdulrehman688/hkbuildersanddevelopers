@@ -607,6 +607,10 @@ class AdminController {
         require_once __DIR__ . '/../views/admin/notices.php';
     }
 
+    public function followups(): void {
+        require_once __DIR__ . '/../views/admin/followups.php';
+    }
+
     public function reports(): void {
         if (($_GET['export'] ?? '') === 'csv') {
             $this->exportLeadsCsv();

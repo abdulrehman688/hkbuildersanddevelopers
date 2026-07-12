@@ -1,13 +1,12 @@
 ﻿<?php
 // ============================================================
 // HK Builders CRM â€” Configuration
-// LOCAL:      http://localhost/CRM  (development)
-// PRODUCTION: https://hkbuildersanddevelopers.com/crm (production)
+// LOCAL:      http://localhost/hkbuildersanddevelopers/crm  (development)
+// PRODUCTION: https://hkbuildersanddevelopers.com/crm      (production)
 // ============================================================
 
 // ---- Environment -------------------------------------------
-// Change to 'production' before uploading to Hostinger
-define('APP_ENV', 'production');
+define('APP_ENV', ($_SERVER['SERVER_NAME'] ?? 'localhost') === 'localhost' ? 'development' : 'production');
 
 // ---- Database -----------------------------------------------
 // PRODUCTION: replace with your Hostinger MySQL credentials
@@ -29,7 +28,7 @@ define('DB_CHARSET', 'utf8mb4');
 define('APP_NAME', 'HK Builders CRM');
 define('APP_URL',  APP_ENV === 'production'
     ? 'https://hkbuildersanddevelopers.com/crm'
-    : 'http://localhost/CRM/public'
+    : 'http://localhost/hkbuildersanddevelopers/crm'
 );
 
 // ---- Security -----------------------------------------------

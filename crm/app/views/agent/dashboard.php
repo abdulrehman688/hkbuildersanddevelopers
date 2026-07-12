@@ -9,8 +9,11 @@ $isSM       = ($_SESSION['user_role'] ?? '') === 'sales_manager';
 $stats      = $leadModel->getAgentStats($agentId);
 $myLeads    = $leadModel->getAll(['agent_id' => $agentId, 'limit' => 8]);
 $poolCount  = $leadModel->countUnclaimed();
-$followUps  = $leadModel->getAgentFollowUps($agentId);
-$overdueCount = count(array_filter($followUps, fn($f) => strtotime($f['scheduled_at']) < time()));
+$followUps    = $leadModel->getAgentFollowUps($agentId);
+$now          = time();
+$todayDate    = date('Y-m-d');
+$overdueCount = count(array_filter($followUps, fn($f) => strtotime($f['scheduled_at']) < $now));
+$todayCount   = count(array_filter($followUps, fn($f) => strtotime($f['scheduled_at']) >= $now && date('Y-m-d', strtotime($f['scheduled_at'])) === $todayDate));
 
 // Sales manager — load team data
 $myTeam      = null;
@@ -113,7 +116,11 @@ ob_start();
         <?php if ($overdueCount > 0): ?>
             <span style="background:#fef2f2;color:#dc2626;font-size:11px;font-weight:600;padding:2px 8px;border-radius:10px;margin-left:8px"><?= $overdueCount ?> overdue</span>
         <?php endif; ?>
+        <?php if ($todayCount > 0): ?>
+            <span style="background:#fffbeb;color:#d97706;font-size:11px;font-weight:600;padding:2px 8px;border-radius:10px;margin-left:4px"><?= $todayCount ?> today</span>
+        <?php endif; ?>
     </h2>
+    <a href="<?= APP_URL ?>/agent/followups">View All &rarr;</a>
 </div>
 <div class="table-wrapper">
     <table class="data-table">
@@ -122,16 +129,22 @@ ob_start();
         </thead>
         <tbody>
         <?php foreach ($followUps as $fup): ?>
-            <?php $overdue = strtotime($fup['scheduled_at']) < time(); ?>
+            <?php
+            $fupTs   = strtotime($fup['scheduled_at']);
+            $overdue = $fupTs < $now;
+            $isToday = !$overdue && date('Y-m-d', $fupTs) === $todayDate;
+            ?>
             <tr>
                 <td>
                     <a href="<?= APP_URL ?>/agent/lead/<?= (int)$fup['lead_id'] ?>" class="lead-name" style="color:var(--navy)"><?= Security::e($fup['lead_name']) ?></a>
                 </td>
                 <td style="font-size:12px;color:var(--text-muted)"><?= Security::e($fup['lead_phone'] ?? '—') ?></td>
                 <td>
-                    <span style="font-size:12px;<?= $overdue ? 'color:#dc2626;font-weight:600' : 'color:var(--text-muted)' ?>">
+                    <span style="font-size:12px;<?= $overdue ? 'color:#dc2626;font-weight:600' : ($isToday ? 'color:#d97706;font-weight:600' : 'color:var(--text-muted)') ?>">
                         <?= date('d M Y, h:i A', strtotime($fup['scheduled_at'])) ?>
-                        <?php if ($overdue): ?><span class="overdue-tag">Overdue</span><?php endif; ?>
+                        <?php if ($overdue): ?><span class="overdue-tag">Overdue</span>
+                        <?php elseif ($isToday): ?><span style="background:#fffbeb;color:#d97706;font-size:10px;font-weight:700;padding:1px 6px;border-radius:4px;margin-left:4px">Today</span>
+                        <?php endif; ?>
                     </span>
                 </td>
                 <td style="font-size:12px;color:var(--text-muted)"><?= Security::e($fup['note'] ?? '—') ?></td>
