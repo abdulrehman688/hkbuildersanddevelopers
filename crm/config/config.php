@@ -14,7 +14,7 @@ unset($_crm_host);
 // PRODUCTION: replace with your Hostinger MySQL credentials
 if (APP_ENV === 'production') {
     define('DB_HOST', 'localhost');
-    define('DB_NAME', 'u813506845_u123456_crm');
+    define('DB_NAME', 'u813506845_crm');
     define('DB_USER', 'u813506845_user');
     define('DB_PASS', 'Hunain@1212');
 } else {

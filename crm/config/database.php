@@ -21,7 +21,7 @@ class Database {
             } catch (PDOException $e) {
                 // Never expose DB error details to the browser
                 error_log('DB connection failed: ' . $e->getMessage());
-                die('Database connection error [env=' . APP_ENV . ', db=' . DB_NAME . ']. Please try again later.');
+                die('Database connection error. Please try again later.');
             }
         }
         return self::$instance;
