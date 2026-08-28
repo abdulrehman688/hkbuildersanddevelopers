@@ -137,6 +137,7 @@ CREATE TABLE IF NOT EXISTS audit_log (
     action      VARCHAR(100)  NOT NULL,
     target_type VARCHAR(50)   NULL,
     target_id   INT UNSIGNED  NULL,
+    detail      VARCHAR(500)  NULL,
     ip_address  VARCHAR(45)   NULL,
     user_agent  VARCHAR(300)  NULL,
     created_at  DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,

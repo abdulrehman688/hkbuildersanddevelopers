@@ -239,7 +239,11 @@ class AgentController {
             );
 
             require_once APP_ROOT . '/app/helpers/AuditLog.php';
-            AuditLog::log('lead_converted', (int)$_SESSION['user_id'], 'lead', $id);
+            $leadName    = $lead['name'] ?? ($lead['phone'] ?? "Lead #{$id}");
+            $clientName  = trim($_POST['name'] ?? '') ?: $leadName;
+            $bookingAmt  = !empty($_POST['booking_amount']) ? 'Rs. ' . number_format((float)$_POST['booking_amount']) : null;
+            $convertDetail = "Lead \"{$leadName}\" converted to client \"{$clientName}\"" . ($bookingAmt ? " — booking {$bookingAmt}." : '.');
+            AuditLog::log('lead_converted', (int)$_SESSION['user_id'], 'lead', $id, $convertDetail);
 
             $_SESSION['success'] = 'Client record saved successfully!';
             header('Location: ' . APP_URL . '/agent/lead/' . $id);

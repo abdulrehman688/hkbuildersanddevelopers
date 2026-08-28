@@ -36,7 +36,7 @@ class AdminController {
                 $name = trim($_POST['name'] ?? '');
                 if ($name === '') { $_SESSION['error'] = 'Team name required.'; header('Location: ' . APP_URL . '/admin/teams'); exit; }
                 $team->create($name, !empty($_POST['manager_id']) ? (int)$_POST['manager_id'] : null);
-                AuditLog::log('team_created', $uid);
+                AuditLog::log('team_created', $uid, null, null, "Team \"{$name}\" created.");
                 $_SESSION['success'] = 'Team "' . htmlspecialchars($name, ENT_QUOTES) . '" created.';
 
             } elseif ($action === 'edit') {
@@ -44,22 +44,38 @@ class AdminController {
                 $name = trim($_POST['name'] ?? '');
                 if ($id && $name !== '') {
                     $team->update($id, $name, !empty($_POST['manager_id']) ? (int)$_POST['manager_id'] : null);
-                    AuditLog::log('team_updated', $uid, 'team', $id);
+                    AuditLog::log('team_updated', $uid, 'team', $id, "Team \"{$name}\" updated.");
                     $_SESSION['success'] = 'Team updated.';
                 }
 
             } elseif ($action === 'delete') {
                 $id = (int)($_POST['team_id'] ?? 0);
-                if ($id) { $team->delete($id); AuditLog::log('team_deleted', $uid, 'team', $id); $_SESSION['success'] = 'Team deleted.'; }
+                if ($id) {
+                    $teamName = $team->findById($id)['name'] ?? "#{$id}";
+                    $team->delete($id);
+                    AuditLog::log('team_deleted', $uid, 'team', $id, "Team \"{$teamName}\" deleted.");
+                    $_SESSION['success'] = 'Team deleted.';
+                }
 
             } elseif ($action === 'assign_agent') {
                 $agentId = (int)($_POST['agent_id'] ?? 0);
                 $teamId  = !empty($_POST['team_id']) ? (int)$_POST['team_id'] : null;
-                if ($agentId) { $team->assignAgent($agentId, $teamId); AuditLog::log('agent_assigned_team', $uid, 'user', $agentId); $_SESSION['success'] = 'Agent assigned.'; }
+                if ($agentId) {
+                    $agentName = $this->user->findById($agentId)['name'] ?? "#{$agentId}";
+                    $teamName  = $teamId ? ($team->findById($teamId)['name'] ?? "#{$teamId}") : 'unknown';
+                    $team->assignAgent($agentId, $teamId);
+                    AuditLog::log('agent_assigned_team', $uid, 'user', $agentId, "{$agentName} assigned to team \"{$teamName}\".");
+                    $_SESSION['success'] = 'Agent assigned.';
+                }
 
             } elseif ($action === 'remove_agent') {
                 $agentId = (int)($_POST['agent_id'] ?? 0);
-                if ($agentId) { $team->assignAgent($agentId, null); AuditLog::log('agent_removed_team', $uid, 'user', $agentId); $_SESSION['success'] = 'Agent removed from team.'; }
+                if ($agentId) {
+                    $agentName = $this->user->findById($agentId)['name'] ?? "#{$agentId}";
+                    $team->assignAgent($agentId, null);
+                    AuditLog::log('agent_removed_team', $uid, 'user', $agentId, "{$agentName} removed from team.");
+                    $_SESSION['success'] = 'Agent removed from team.';
+                }
             }
 
             header('Location: ' . APP_URL . '/admin/teams');
@@ -143,7 +159,8 @@ class AdminController {
         @unlink($savedPath);
 
         $_SESSION['import_result'] = $result;
-        AuditLog::log('leads_imported', (int)$_SESSION['user_id']);
+        $importDetail = ($result['inserted'] ?? 0) . ' leads imported, ' . ($result['skipped'] ?? 0) . ' skipped from "' . basename($file['name']) . '".';
+        AuditLog::log('leads_imported', (int)$_SESSION['user_id'], null, null, $importDetail);
         header('Location: ' . APP_URL . '/admin/leads?action=import&done=1');
         exit;
     }
@@ -407,7 +424,7 @@ class AdminController {
             'base_salary'     => $_POST['base_salary'] ?? 0,
             'commission_rate' => $_POST['commission_rate'] ?? 0,
         ]);
-        AuditLog::log('agent_created', (int)$_SESSION['user_id'], 'user', $newAgentId ?: null);
+        AuditLog::log('agent_created', (int)$_SESSION['user_id'], 'user', $newAgentId ?: null, "Agent \"{$name}\" created with role " . ($_POST['role'] ?? 'agent') . ".");
         $_SESSION['success'] = 'Agent "' . htmlspecialchars($name, ENT_QUOTES) . '" created successfully.';
         header('Location: ' . APP_URL . '/admin/agents');
         exit;
@@ -421,8 +438,11 @@ class AdminController {
         $agentId = (int)($_POST['agent_id'] ?? 0);
         $status  = $_POST['status'] ?? '';
         if ($agentId && in_array($status, ['active', 'suspended'])) {
+            $agentName = $this->user->findById($agentId)['name'] ?? "#{$agentId}";
             $this->user->setStatus($agentId, $status);
-            AuditLog::log($status === 'suspended' ? 'agent_suspended' : 'agent_activated', (int)$_SESSION['user_id'], 'user', $agentId);
+            $logAction = $status === 'suspended' ? 'agent_suspended' : 'agent_activated';
+            $logDetail = "Agent \"{$agentName}\" " . ($status === 'suspended' ? 'suspended.' : 'activated.');
+            AuditLog::log($logAction, (int)$_SESSION['user_id'], 'user', $agentId, $logDetail);
             $_SESSION['success'] = 'Agent status updated.';
         }
         header('Location: ' . APP_URL . '/admin/agents');
@@ -443,8 +463,9 @@ class AdminController {
             exit;
         }
 
+        $agentName = $this->user->findById($agentId)['name'] ?? "#{$agentId}";
         $this->user->updatePassword($agentId, $password);
-        AuditLog::log('agent_password_reset', (int)$_SESSION['user_id'], 'user', $agentId);
+        AuditLog::log('agent_password_reset', (int)$_SESSION['user_id'], 'user', $agentId, "Password reset for agent \"{$agentName}\".");
         $_SESSION['success'] = 'Password reset successfully.';
         header('Location: ' . APP_URL . '/admin/agents');
         exit;
@@ -529,7 +550,8 @@ class AdminController {
                 'file_status'    => in_array($_POST['file_status'] ?? '', ['mature','immature']) ? $_POST['file_status'] : 'mature',
                 'flag_reason'    => trim($_POST['flag_reason']    ?? ''),
             ], (int)$_SESSION['user_id']);
-            AuditLog::log('client_updated', (int)$_SESSION['user_id'], 'client', $id);
+            $clientName = trim($_POST['name'] ?? '') ?: "Client #{$id}";
+            AuditLog::log('client_updated', (int)$_SESSION['user_id'], 'client', $id, "Client \"{$clientName}\" profile updated.");
             $_SESSION['success'] = 'Client updated.';
             header('Location: ' . APP_URL . '/admin/client/' . $id);
             exit;
@@ -598,7 +620,7 @@ class AdminController {
                     'attachment' => $attachment,
                     'created_by' => (int)$_SESSION['user_id'],
                 ]);
-                AuditLog::log('notice_created', (int)$_SESSION['user_id']);
+                AuditLog::log('notice_created', (int)$_SESSION['user_id'], null, null, "Notice \"{$title}\" posted ({$type}).");
                 $_SESSION['success'] = 'Notice posted successfully.';
 
             } elseif ($action === 'delete') {

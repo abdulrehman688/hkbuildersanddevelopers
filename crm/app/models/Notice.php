@@ -125,7 +125,7 @@ class Notice {
                 u.name AS user_name,
                 u.role AS user_role,
                 a.action AS event_type,
-                CONCAT_WS(' ', a.target_type, a.target_id) AS detail,
+                COALESCE(a.detail, NULLIF(CONCAT_WS(' ', a.target_type, a.target_id), '')) AS detail,
                 NULL AS lead_id,
                 NULL AS lead_name,
                 a.ip_address,

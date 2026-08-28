@@ -4,21 +4,23 @@ require_once __DIR__ . '/../../config/database.php';
 class AuditLog {
 
     public static function log(
-        string $action,
-        ?int   $userId     = null,
+        string  $action,
+        ?int    $userId     = null,
         ?string $targetType = null,
-        ?int   $targetId   = null
+        ?int    $targetId   = null,
+        ?string $detail     = null
     ): void {
         try {
             $db = Database::connect();
             $db->prepare("
-                INSERT INTO audit_log (user_id, action, target_type, target_id, ip_address, user_agent)
-                VALUES (?, ?, ?, ?, ?, ?)
+                INSERT INTO audit_log (user_id, action, target_type, target_id, detail, ip_address, user_agent)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
             ")->execute([
                 $userId,
                 $action,
                 $targetType,
                 $targetId,
+                $detail,
                 self::ip(),
                 substr($_SERVER['HTTP_USER_AGENT'] ?? '', 0, 300),
             ]);
