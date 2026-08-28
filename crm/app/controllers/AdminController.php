@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../../config/config.php';
 require_once __DIR__ . '/../helpers/Security.php';
+require_once __DIR__ . '/../helpers/AuditLog.php';
 require_once __DIR__ . '/../models/Lead.php';
 require_once __DIR__ . '/../models/User.php';
 
@@ -29,10 +30,13 @@ class AdminController {
 
             $action = $_POST['action'] ?? '';
 
+            $uid = (int)$_SESSION['user_id'];
+
             if ($action === 'create') {
                 $name = trim($_POST['name'] ?? '');
                 if ($name === '') { $_SESSION['error'] = 'Team name required.'; header('Location: ' . APP_URL . '/admin/teams'); exit; }
                 $team->create($name, !empty($_POST['manager_id']) ? (int)$_POST['manager_id'] : null);
+                AuditLog::log('team_created', $uid);
                 $_SESSION['success'] = 'Team "' . htmlspecialchars($name, ENT_QUOTES) . '" created.';
 
             } elseif ($action === 'edit') {
@@ -40,21 +44,22 @@ class AdminController {
                 $name = trim($_POST['name'] ?? '');
                 if ($id && $name !== '') {
                     $team->update($id, $name, !empty($_POST['manager_id']) ? (int)$_POST['manager_id'] : null);
+                    AuditLog::log('team_updated', $uid, 'team', $id);
                     $_SESSION['success'] = 'Team updated.';
                 }
 
             } elseif ($action === 'delete') {
                 $id = (int)($_POST['team_id'] ?? 0);
-                if ($id) { $team->delete($id); $_SESSION['success'] = 'Team deleted.'; }
+                if ($id) { $team->delete($id); AuditLog::log('team_deleted', $uid, 'team', $id); $_SESSION['success'] = 'Team deleted.'; }
 
             } elseif ($action === 'assign_agent') {
                 $agentId = (int)($_POST['agent_id'] ?? 0);
                 $teamId  = !empty($_POST['team_id']) ? (int)$_POST['team_id'] : null;
-                if ($agentId) { $team->assignAgent($agentId, $teamId); $_SESSION['success'] = 'Agent assigned.'; }
+                if ($agentId) { $team->assignAgent($agentId, $teamId); AuditLog::log('agent_assigned_team', $uid, 'user', $agentId); $_SESSION['success'] = 'Agent assigned.'; }
 
             } elseif ($action === 'remove_agent') {
                 $agentId = (int)($_POST['agent_id'] ?? 0);
-                if ($agentId) { $team->assignAgent($agentId, null); $_SESSION['success'] = 'Agent removed from team.'; }
+                if ($agentId) { $team->assignAgent($agentId, null); AuditLog::log('agent_removed_team', $uid, 'user', $agentId); $_SESSION['success'] = 'Agent removed from team.'; }
             }
 
             header('Location: ' . APP_URL . '/admin/teams');
@@ -138,6 +143,7 @@ class AdminController {
         @unlink($savedPath);
 
         $_SESSION['import_result'] = $result;
+        AuditLog::log('leads_imported', (int)$_SESSION['user_id']);
         header('Location: ' . APP_URL . '/admin/leads?action=import&done=1');
         exit;
     }
@@ -388,7 +394,7 @@ class AdminController {
             exit;
         }
 
-        $this->user->createAgent([
+        $newAgentId = $this->user->createAgent([
             'name'            => $name,
             'email'           => $email,
             'password'        => $password,
@@ -401,6 +407,7 @@ class AdminController {
             'base_salary'     => $_POST['base_salary'] ?? 0,
             'commission_rate' => $_POST['commission_rate'] ?? 0,
         ]);
+        AuditLog::log('agent_created', (int)$_SESSION['user_id'], 'user', $newAgentId ?: null);
         $_SESSION['success'] = 'Agent "' . htmlspecialchars($name, ENT_QUOTES) . '" created successfully.';
         header('Location: ' . APP_URL . '/admin/agents');
         exit;
@@ -415,6 +422,7 @@ class AdminController {
         $status  = $_POST['status'] ?? '';
         if ($agentId && in_array($status, ['active', 'suspended'])) {
             $this->user->setStatus($agentId, $status);
+            AuditLog::log($status === 'suspended' ? 'agent_suspended' : 'agent_activated', (int)$_SESSION['user_id'], 'user', $agentId);
             $_SESSION['success'] = 'Agent status updated.';
         }
         header('Location: ' . APP_URL . '/admin/agents');
@@ -436,6 +444,7 @@ class AdminController {
         }
 
         $this->user->updatePassword($agentId, $password);
+        AuditLog::log('agent_password_reset', (int)$_SESSION['user_id'], 'user', $agentId);
         $_SESSION['success'] = 'Password reset successfully.';
         header('Location: ' . APP_URL . '/admin/agents');
         exit;
@@ -476,8 +485,6 @@ class AdminController {
             }
 
             $this->user->updatePassword((int)$_SESSION['user_id'], $new);
-
-            require_once __DIR__ . '/../helpers/AuditLog.php';
             AuditLog::log('password_changed', (int)$_SESSION['user_id'], 'user', (int)$_SESSION['user_id']);
 
             $_SESSION['success'] = 'Password changed successfully.';
@@ -522,6 +529,7 @@ class AdminController {
                 'file_status'    => in_array($_POST['file_status'] ?? '', ['mature','immature']) ? $_POST['file_status'] : 'mature',
                 'flag_reason'    => trim($_POST['flag_reason']    ?? ''),
             ], (int)$_SESSION['user_id']);
+            AuditLog::log('client_updated', (int)$_SESSION['user_id'], 'client', $id);
             $_SESSION['success'] = 'Client updated.';
             header('Location: ' . APP_URL . '/admin/client/' . $id);
             exit;
@@ -590,12 +598,14 @@ class AdminController {
                     'attachment' => $attachment,
                     'created_by' => (int)$_SESSION['user_id'],
                 ]);
+                AuditLog::log('notice_created', (int)$_SESSION['user_id']);
                 $_SESSION['success'] = 'Notice posted successfully.';
 
             } elseif ($action === 'delete') {
                 $id = (int)($_POST['notice_id'] ?? 0);
                 if ($id) {
                     $noticeModel->delete($id);
+                    AuditLog::log('notice_deleted', (int)$_SESSION['user_id'], 'notice', $id);
                     $_SESSION['success'] = 'Notice deleted.';
                 }
             }

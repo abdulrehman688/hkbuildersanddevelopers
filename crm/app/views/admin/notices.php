@@ -39,16 +39,36 @@ $pageTitle  = 'Notices & Activity';
 $activePage = 'notices';
 
 $auditLabels = [
-    'login_success'              => ['Login',             '#10b981'],
-    'login_fail'                 => ['Login Failed',      '#f59e0b'],
-    'login_fail_unknown_email'   => ['Unknown Email',     '#f59e0b'],
-    'login_blocked_locked'       => ['Account Locked',    '#ef4444'],
-    'login_blocked_suspended'    => ['Account Suspended', '#ef4444'],
-    'login_remember_me'          => ['Auto Login',        '#3b82f6'],
-    'logout'                     => ['Logout',            '#6b7280'],
-    'password_changed'           => ['Password Changed',  '#8b5cf6'],
-    'task_marked_done'           => ['Task Done',         '#10b981'],
-    'task_unmarked_done'         => ['Task Undone',       '#f59e0b'],
+    // Auth
+    'login_success'              => ['Login',              '#10b981'],
+    'login_fail'                 => ['Login Failed',       '#f59e0b'],
+    'login_fail_unknown_email'   => ['Unknown Email',      '#f59e0b'],
+    'login_blocked_locked'       => ['Account Locked',     '#ef4444'],
+    'login_blocked_suspended'    => ['Suspended Login',    '#ef4444'],
+    'login_remember_me'          => ['Auto Login',         '#3b82f6'],
+    'logout'                     => ['Logout',             '#6b7280'],
+    'password_changed'           => ['Password Changed',   '#8b5cf6'],
+    // Agent management
+    'agent_created'              => ['Agent Created',      '#10b981'],
+    'agent_suspended'            => ['Agent Suspended',    '#ef4444'],
+    'agent_activated'            => ['Agent Activated',    '#10b981'],
+    'agent_password_reset'       => ['Password Reset',     '#8b5cf6'],
+    // Team management
+    'team_created'               => ['Team Created',       '#3b82f6'],
+    'team_updated'               => ['Team Updated',       '#f59e0b'],
+    'team_deleted'               => ['Team Deleted',       '#ef4444'],
+    'agent_assigned_team'        => ['Assigned to Team',   '#10b981'],
+    'agent_removed_team'         => ['Removed from Team',  '#f59e0b'],
+    // Leads & clients
+    'leads_imported'             => ['CSV Imported',       '#64748b'],
+    'lead_converted'             => ['Lead Converted',     '#c9a84c'],
+    'client_updated'             => ['Client Updated',     '#f59e0b'],
+    // Notices
+    'notice_created'             => ['Notice Posted',      '#3b82f6'],
+    'notice_deleted'             => ['Notice Deleted',     '#ef4444'],
+    // Tasks
+    'task_marked_done'           => ['Task Done',          '#10b981'],
+    'task_unmarked_done'         => ['Task Undone',        '#f59e0b'],
 ];
 $leadLabels = [
     'note'          => ['Note Added',     '#3b82f6'],

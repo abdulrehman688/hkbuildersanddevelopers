@@ -238,6 +238,9 @@ class AgentController {
                 (!empty($_POST['booking_amount']) ? 'Rs. ' . number_format((float)$_POST['booking_amount']) : 'not specified') . '.'
             );
 
+            require_once APP_ROOT . '/app/helpers/AuditLog.php';
+            AuditLog::log('lead_converted', (int)$_SESSION['user_id'], 'lead', $id);
+
             $_SESSION['success'] = 'Client record saved successfully!';
             header('Location: ' . APP_URL . '/agent/lead/' . $id);
             exit;
