@@ -22,13 +22,13 @@
 
 ### Config Auto-Detection
 - `config.php` auto-detects environment: `localhost` = development, else = production
-- `.htaccess` has no `RewriteBase` — Apache auto-detects correct path in both environments
+- `.htaccess` has `RewriteBase /crm/` for production Hostinger routing
 - No more manual toggling or sync scripts
 
 ### Tech Stack
 - PHP (XAMPP local), custom MVC, PDO, MySQL/MariaDB
 - DB local: `crm_system` / `root` / no password
-- DB prod: `u813506845_u123456_crm` / `u813506845_user` / `Hunain@1212`
+- DB prod: `u813506845_crm` / `u813506845_user` / `Hunain@1212`
 
 ### CSS Design System
 - Navy/Gold theme, Cormorant Garamond + Jost fonts
@@ -51,25 +51,11 @@
 5. **Mark-done activity** logged in Activity Feed + Audit Log
 6. **File download** — attachments download instead of opening in browser
 7. **Folder restructure** — single main folder at `hkbuildersanddevelopers`, auto-detect config, no sync script
+8. **Follow-ups & Meetings feature** — `/agent/followups` and `/admin/followups` pages, sidebar links, model methods, routes, overdue badges on both dashboards
 
 ---
 
 ## Pending Work
-
-### Follow-ups & Meetings Feature (Approved, Not Started)
-
-**Database**: `follow_ups` table already exists (id, lead_id, agent_id, scheduled_at, note, is_done, done_at, created_at)
-
-**Existing code**: `scheduleFollowUp()`, `markFollowUpDone()`, `getAgentFollowUps()` in Lead model
-
-**Plan**:
-1. New `/agent/followups` page — Overdue / Upcoming / Later sections + schedule modal
-2. New `/admin/followups` page — all follow-ups across agents with filters
-3. Enhance agent dashboard — urgency colors (red=overdue, amber=near)
-4. Add follow-ups section to admin dashboard
-5. Add `getAllFollowUps()`, `getFollowUpCounts()` to Lead model
-6. Add sidebar links for both admin and agent
-7. Add routes in index.php
 
 ### Notifications (Approved, Not Started)
 1. Top banner alert (red=overdue, amber=within 30 min) on every page
