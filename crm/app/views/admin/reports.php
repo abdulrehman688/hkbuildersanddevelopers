@@ -180,7 +180,8 @@ $lbBaseUrl = APP_URL . '/admin/reports' . ($dateFrom || $dateTo ? '?date_from=' 
             $isMedal = $rank < 3 && $won > 0;
             $rowBg  = $rank === 0 && $won > 0 ? 'background:rgba(201,168,76,.06)' : '';
         ?>
-        <tr style="<?= $rowBg ?>">
+        <tr style="<?= $rowBg ?>cursor:pointer" onclick="window.location='<?= APP_URL ?>/admin/agent/<?= (int)$row['id'] ?>'"
+            onmouseenter="this.style.background='rgba(201,168,76,.10)'" onmouseleave="this.style.background='<?= $rank === 0 && $won > 0 ? 'rgba(201,168,76,.06)' : '' ?>'">
             <td style="text-align:center;font-size:<?= $isMedal ? '20px' : '13px' ?>;font-weight:<?= $isMedal ? '700' : '500' ?>;color:<?= !$isMedal ? 'var(--text-muted)' : 'inherit' ?>">
                 <?= $isMedal ? $medals[$rank] : "#{$pos}" ?>
             </td>
