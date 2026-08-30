@@ -8,6 +8,29 @@ class Lead {
         $this->db = Database::connect();
     }
 
+    public function getLeaderboard(string $month = ''): array {
+        $dateJoin = $month ? "AND DATE_FORMAT(l.updated_at, '%Y-%m') = ?" : '';
+        $params   = $month ? [$month] : [];
+        $stmt = $this->db->prepare("
+            SELECT
+                u.id,
+                u.name                              AS agent_name,
+                t.name                              AS team_name,
+                COUNT(l.id)                         AS total,
+                COALESCE(SUM(s.name = 'Won'),  0)   AS won,
+                COALESCE(SUM(s.name = 'Lost'), 0)   AS lost
+            FROM users u
+            LEFT JOIN leads l  ON l.assigned_to = u.id AND l.deleted_at IS NULL {$dateJoin}
+            LEFT JOIN lead_statuses s ON s.id = l.status_id
+            LEFT JOIN teams t  ON t.id = u.team_id
+            WHERE u.role IN ('agent','sales_manager') AND u.status = 'active'
+            GROUP BY u.id, u.name, t.name
+            ORDER BY won DESC, total DESC
+        ");
+        $stmt->execute($params);
+        return $stmt->fetchAll();
+    }
+
     public function getAgentPerformance(string $dateFrom = '', string $dateTo = ''): array {
         $where  = ["l.deleted_at IS NULL", "u.role = 'agent'"];
         $params = [];

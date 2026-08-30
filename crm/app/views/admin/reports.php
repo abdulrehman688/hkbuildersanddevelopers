@@ -8,11 +8,13 @@ $dateFrom = trim($_GET['date_from'] ?? '');
 $dateTo   = trim($_GET['date_to']   ?? '');
 $statusId = (int)($_GET['status_id'] ?? 0);
 
+$lbMonth  = preg_match('/^\d{4}-\d{2}$/', $_GET['lb_month'] ?? '') ? $_GET['lb_month'] : '';
 $agents   = $leadModel->getAgentPerformance($dateFrom, $dateTo);
 $sources  = $leadModel->getSourceBreakdown($dateFrom, $dateTo);
 $statuses = $leadModel->getStatusBreakdown($dateFrom, $dateTo);
 $trend    = $leadModel->getLeadTrend(30);
 $allStats = $leadModel->getDashboardStats();
+$leaderboard = $leadModel->getLeaderboard($lbMonth);
 
 // Totals for source chart max
 $totalLeads = array_sum(array_column($sources, 'total')) ?: 1;
@@ -127,6 +129,98 @@ ob_start();
         <div class="stat-number"><?= $overallConv ?>%</div>
         <div class="stat-label">Conversion Rate</div>
     </div>
+</div>
+
+<!-- Leaderboard -->
+<?php
+$lbMonths = [];
+for ($i = 0; $i < 6; $i++) {
+    $ts = strtotime("-$i months");
+    $lbMonths[] = ['value' => date('Y-m', $ts), 'label' => date('M Y', $ts)];
+}
+$medals = ['🥇','🥈','🥉'];
+$lbBaseUrl = APP_URL . '/admin/reports' . ($dateFrom || $dateTo ? '?date_from=' . urlencode($dateFrom) . '&date_to=' . urlencode($dateTo) : '?');
+?>
+<div class="section-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:16px">
+    <h2 style="margin:0">Agent Leaderboard</h2>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+        <a href="<?= $lbBaseUrl . ($dateFrom || $dateTo ? '&lb_month=' : 'lb_month=') ?>"
+           class="btn btn-sm <?= !$lbMonth ? 'btn-primary' : 'btn-secondary' ?>"
+           style="font-size:11px;padding:5px 10px">All Time</a>
+        <?php foreach ($lbMonths as $m): ?>
+        <a href="<?= $lbBaseUrl . ($dateFrom || $dateTo ? '&lb_month=' : 'lb_month=') . $m['value'] ?>"
+           class="btn btn-sm <?= $lbMonth === $m['value'] ? 'btn-primary' : 'btn-secondary' ?>"
+           style="font-size:11px;padding:5px 10px"><?= $m['label'] ?></a>
+        <?php endforeach; ?>
+    </div>
+</div>
+<div class="table-wrapper" style="margin-bottom:28px">
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th style="width:50px;text-align:center">Rank</th>
+                <th>Agent</th>
+                <th>Team</th>
+                <th style="text-align:center">Assigned</th>
+                <th style="text-align:center">Won</th>
+                <th style="text-align:center">Lost</th>
+                <th>Conversion</th>
+            </tr>
+        </thead>
+        <tbody>
+        <?php if (empty($leaderboard)): ?>
+            <tr><td colspan="7" class="empty-row">No agents yet.</td></tr>
+        <?php endif; ?>
+        <?php foreach ($leaderboard as $rank => $row):
+            $won    = (int)$row['won'];
+            $lost   = (int)$row['lost'];
+            $closed = $won + $lost;
+            $conv   = $closed > 0 ? round(($won / $closed) * 100) : 0;
+            $pos    = $rank + 1;
+            $isMedal = $rank < 3 && $won > 0;
+            $rowBg  = $rank === 0 && $won > 0 ? 'background:rgba(201,168,76,.06)' : '';
+        ?>
+        <tr style="<?= $rowBg ?>">
+            <td style="text-align:center;font-size:<?= $isMedal ? '20px' : '13px' ?>;font-weight:<?= $isMedal ? '700' : '500' ?>;color:<?= !$isMedal ? 'var(--text-muted)' : 'inherit' ?>">
+                <?= $isMedal ? $medals[$rank] : "#{$pos}" ?>
+            </td>
+            <td>
+                <div style="display:flex;align-items:center;gap:10px">
+                    <div class="sidebar-avatar" style="width:32px;height:32px;font-size:12px;flex-shrink:0;<?= $rank === 0 && $won > 0 ? 'background:var(--gold);color:#fff' : '' ?>">
+                        <?= strtoupper(substr($row['agent_name'], 0, 1)) ?>
+                    </div>
+                    <div>
+                        <div class="lead-name"><?= Security::e($row['agent_name']) ?></div>
+                        <?php if ($rank === 0 && $won > 0): ?>
+                            <div style="font-size:10px;color:var(--gold);font-weight:600;letter-spacing:.4px;text-transform:uppercase">Top Performer</div>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            </td>
+            <td style="font-size:13px;color:var(--text-muted)">
+                <?= $row['team_name'] ? Security::e($row['team_name']) : '<span style="color:var(--text-muted);opacity:.5">—</span>' ?>
+            </td>
+            <td style="text-align:center;font-weight:600;color:var(--navy)"><?= (int)$row['total'] ?></td>
+            <td style="text-align:center">
+                <span style="font-weight:700;color:#10b981;font-size:15px"><?= $won ?></span>
+            </td>
+            <td style="text-align:center;font-weight:500;color:#ef4444"><?= $lost ?></td>
+            <td>
+                <?php if ($closed > 0): ?>
+                    <div style="display:flex;align-items:center;gap:8px">
+                        <div class="conv-bar" style="width:80px">
+                            <div class="conv-fill" style="width:<?= $conv ?>%;background:<?= $conv >= 50 ? '#10b981' : ($conv >= 25 ? '#f59e0b' : '#ef4444') ?>"></div>
+                        </div>
+                        <span style="font-size:12px;font-weight:600;color:var(--navy)"><?= $conv ?>%</span>
+                    </div>
+                <?php else: ?>
+                    <span style="color:var(--text-muted);font-size:12px">—</span>
+                <?php endif; ?>
+            </td>
+        </tr>
+        <?php endforeach; ?>
+        </tbody>
+    </table>
 </div>
 
 <!-- Charts row -->
