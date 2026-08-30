@@ -242,11 +242,63 @@ class User {
     public function getAgentWonDeals(int $id): array {
         $stmt = $this->db->prepare("
             SELECT l.id, COALESCE(l.name,'Unknown') AS name, l.phone,
-                   l.project, l.category, l.investment_amount, l.updated_at
+                   l.project, l.category, l.updated_at,
+                   COALESCE(c.booking_amount, l.investment_amount)  AS booking_amount,
+                   COALESCE(c.file_status, 'mature')                AS file_status,
+                   c.unit_no, c.block
             FROM leads l
             JOIN lead_statuses ls ON ls.id = l.status_id
+            LEFT JOIN clients c ON c.lead_id = l.id
             WHERE l.assigned_to = ? AND ls.name = 'Won' AND l.deleted_at IS NULL
             ORDER BY l.updated_at DESC
+        ");
+        $stmt->execute([$id]);
+        return $stmt->fetchAll();
+    }
+
+    public function getAgentCommissionSummary(int $id): array {
+        $stmt = $this->db->prepare("
+            SELECT
+                COALESCE(SUM(c.booking_amount), 0)  AS total_booking,
+                COALESCE(SUM(c.booking_amount), 0) * (u.commission_rate / 100) AS total_commission,
+                COALESCE(SUM(CASE WHEN c.file_status = 'mature'   THEN c.booking_amount ELSE 0 END), 0)
+                    * (u.commission_rate / 100)     AS mature_commission,
+                COALESCE(SUM(CASE WHEN c.file_status = 'immature' THEN c.booking_amount ELSE 0 END), 0)
+                    * (u.commission_rate / 100)     AS immature_commission,
+                COUNT(c.id)                         AS total_clients,
+                COALESCE(SUM(c.file_status = 'mature'),   0) AS mature_count,
+                COALESCE(SUM(c.file_status = 'immature'), 0) AS immature_count
+            FROM users u
+            LEFT JOIN clients c ON c.agent_id = u.id
+            WHERE u.id = ?
+            GROUP BY u.id, u.commission_rate
+        ");
+        $stmt->execute([$id]);
+        return $stmt->fetch() ?: [
+            'total_booking' => 0, 'total_commission' => 0,
+            'mature_commission' => 0, 'immature_commission' => 0,
+            'total_clients' => 0, 'mature_count' => 0, 'immature_count' => 0,
+        ];
+    }
+
+    public function getAgentCareerByYear(int $id): array {
+        $stmt = $this->db->prepare("
+            SELECT
+                YEAR(l.created_at)  AS year,
+                COUNT(l.id)         AS total_assigned,
+                COALESCE(SUM(ls.name = 'Won'),  0)  AS won,
+                COALESCE(SUM(ls.name = 'Lost'), 0)  AS lost,
+                COALESCE(SUM(CASE WHEN ls.name = 'Won' THEN COALESCE(c.booking_amount, 0) ELSE 0 END), 0)
+                    AS booking_value,
+                COALESCE(SUM(CASE WHEN ls.name = 'Won' THEN COALESCE(c.booking_amount, 0) ELSE 0 END), 0)
+                    * (u.commission_rate / 100) AS commission
+            FROM leads l
+            JOIN users u ON u.id = l.assigned_to
+            LEFT JOIN lead_statuses ls ON ls.id = l.status_id
+            LEFT JOIN clients c ON c.lead_id = l.id
+            WHERE l.assigned_to = ? AND l.deleted_at IS NULL
+            GROUP BY YEAR(l.created_at)
+            ORDER BY year DESC
         ");
         $stmt->execute([$id]);
         return $stmt->fetchAll();

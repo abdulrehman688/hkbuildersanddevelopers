@@ -16,9 +16,9 @@ $conversion = $closed > 0 ? round(($won / $closed) * 100) : 0;
 $initials   = strtoupper(substr($agent['name'] ?? 'A', 0, 1));
 $isSM       = $agent['role'] === 'sales_manager';
 
-// Commission estimate from won deals
-$totalBooking    = array_sum(array_column($wonDeals, 'investment_amount'));
-$estCommission   = $totalBooking * ((float)$agent['commission_rate'] / 100);
+// Commission from clients table (accurate)
+$totalBooking  = (float)($commissionSummary['total_booking']     ?? 0);
+$estCommission = (float)($commissionSummary['total_commission']  ?? 0);
 
 // Follow-up completion rate
 $fuTotal = (int)$followUpStats['total'];
@@ -178,6 +178,71 @@ $chartWon    = json_encode(array_map(fn($r) => (int)$r['won'],   $monthlyTrend))
             </div>
         </div>
 
+        <!-- Career History -->
+        <div class="card" style="padding:0">
+            <div style="padding:16px 20px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width:18px;height:18px;color:var(--gold)"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 14.15v4.25c0 1.094-.787 2.036-1.872 2.18-2.087.277-4.216.42-6.378.42s-4.291-.143-6.378-.42c-1.085-.144-1.872-1.086-1.872-2.18v-4.25m16.5 0a2.18 2.18 0 00.75-1.661V8.706c0-1.081-.768-2.015-1.837-2.175a48.114 48.114 0 00-3.413-.387m4.5 8.006c-.194.165-.42.295-.673.38A23.978 23.978 0 0112 15.75c-2.648 0-5.195-.429-7.577-1.22a2.016 2.016 0 01-.673-.38m0 0A2.18 2.18 0 013 12.489V8.706c0-1.081.768-2.015 1.837-2.175a48.111 48.111 0 013.413-.387m7.5 0V5.25A2.25 2.25 0 0013.5 3h-3a2.25 2.25 0 00-2.25 2.25v.894m7.5 0a48.667 48.667 0 00-7.5 0M12 12.75h.008v.008H12v-.008z"/></svg>
+                <span style="font-size:14px;font-weight:600;color:var(--navy)">Career History</span>
+            </div>
+
+            <!-- Commission Summary Card -->
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1px;background:var(--border);border-bottom:1px solid var(--border)">
+                <?php foreach ([
+                    ['Joined',              date('d M Y', strtotime($agent['created_at'])),              'var(--navy)',  false],
+                    ['Total Clients',       (int)($commissionSummary['total_clients'] ?? 0),              'var(--navy)',  false],
+                    ['Total Business',      'Rs. ' . number_format($totalBooking),                        '#10b981',     false],
+                    ['Commission Rate',     number_format((float)$agent['commission_rate'], 1) . '%',     'var(--navy)',  false],
+                    ['Total Earned',        'Rs. ' . number_format($estCommission),                       '#10b981',     false],
+                    ['From Mature Files',   'Rs. ' . number_format((float)($commissionSummary['mature_commission']   ?? 0)), '#10b981', false],
+                    ['From Immature Files', 'Rs. ' . number_format((float)($commissionSummary['immature_commission'] ?? 0)), '#f59e0b', false],
+                ] as [$label, $value, $color, $_]): ?>
+                <div style="background:var(--card-bg,var(--bg));padding:14px 18px">
+                    <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px"><?= $label ?></div>
+                    <div style="font-size:15px;font-weight:700;color:<?= $color ?>"><?= $value ?></div>
+                </div>
+                <?php endforeach; ?>
+            </div>
+
+            <!-- Year-by-Year Table -->
+            <?php if (!empty($careerByYear)): ?>
+            <div class="table-wrapper" style="margin:0">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Year</th>
+                            <th style="text-align:center">Assigned</th>
+                            <th style="text-align:center">Won</th>
+                            <th style="text-align:center">Lost</th>
+                            <th>Booking Value</th>
+                            <th>Commission</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    <?php foreach ($careerByYear as $yr):
+                        $yrWon   = (int)$yr['won'];
+                        $yrLost  = (int)$yr['lost'];
+                        $yrCl    = $yrWon + $yrLost;
+                        $yrConv  = $yrCl > 0 ? round(($yrWon / $yrCl) * 100) : 0;
+                    ?>
+                    <tr>
+                        <td style="font-weight:700;color:var(--navy);font-size:15px"><?= (int)$yr['year'] ?></td>
+                        <td style="text-align:center;font-weight:600"><?= (int)$yr['total_assigned'] ?></td>
+                        <td style="text-align:center;color:#10b981;font-weight:600"><?= $yrWon ?></td>
+                        <td style="text-align:center;color:#ef4444;font-weight:500"><?= $yrLost ?></td>
+                        <td style="font-weight:600;color:var(--navy)">
+                            <?= $yr['booking_value'] > 0 ? 'Rs. ' . number_format((float)$yr['booking_value']) : '—' ?>
+                        </td>
+                        <td style="color:#10b981;font-weight:600">
+                            <?= $yr['commission'] > 0 ? 'Rs. ' . number_format((float)$yr['commission']) : '—' ?>
+                        </td>
+                    </tr>
+                    <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+            <?php endif; ?>
+        </div>
+
         <!-- Monthly Trend Chart -->
         <?php if (!empty($monthlyTrend)): ?>
         <div class="card" style="padding:20px">
@@ -262,9 +327,11 @@ $chartWon    = json_encode(array_map(fn($r) => (int)$r['won'],   $monthlyTrend))
             <div style="padding:14px 18px 12px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
                 <span style="font-size:14px;font-weight:600;color:var(--navy)">Won Deals (<?= count($wonDeals) ?>)</span>
                 <?php if ($totalBooking > 0): ?>
-                <span style="font-size:13px;color:var(--text-muted)">
-                    Total Value: <b style="color:var(--navy)">Rs. <?= number_format($totalBooking) ?></b>
-                    &nbsp;·&nbsp; Est. Commission: <b style="color:#10b981">Rs. <?= number_format($estCommission) ?></b>
+                <span style="font-size:12px;color:var(--text-muted);display:flex;gap:12px;flex-wrap:wrap">
+                    <span>Booking: <b style="color:var(--navy)">Rs. <?= number_format($totalBooking) ?></b></span>
+                    <span>Commission: <b style="color:#10b981">Rs. <?= number_format($estCommission) ?></b></span>
+                    <span>Mature: <b style="color:#10b981"><?= (int)($commissionSummary['mature_count'] ?? 0) ?></b></span>
+                    <span>Immature: <b style="color:#f59e0b"><?= (int)($commissionSummary['immature_count'] ?? 0) ?></b></span>
                 </span>
                 <?php endif; ?>
             </div>
@@ -274,18 +341,18 @@ $chartWon    = json_encode(array_map(fn($r) => (int)$r['won'],   $monthlyTrend))
                         <tr>
                             <th>Client</th>
                             <th>Project</th>
-                            <th>Category</th>
-                            <th>Investment</th>
-                            <th>Est. Commission</th>
+                            <th>File Status</th>
+                            <th>Booking Amount</th>
+                            <th>Commission</th>
                             <th>Closed On</th>
                             <th></th>
                         </tr>
                     </thead>
                     <tbody>
                     <?php foreach ($wonDeals as $deal):
-                        $dealComm = $deal['investment_amount']
-                            ? $deal['investment_amount'] * ((float)$agent['commission_rate'] / 100)
-                            : 0;
+                        $dealAmt  = (float)($deal['booking_amount'] ?? 0);
+                        $dealComm = $dealAmt * ((float)$agent['commission_rate'] / 100);
+                        $isMature = ($deal['file_status'] ?? 'mature') === 'mature';
                     ?>
                     <tr>
                         <td>
@@ -294,12 +361,23 @@ $chartWon    = json_encode(array_map(fn($r) => (int)$r['won'],   $monthlyTrend))
                                 <div style="font-size:11px;color:var(--text-muted)"><?= Security::e($deal['phone']) ?></div>
                             <?php endif; ?>
                         </td>
-                        <td style="font-size:13px"><?= $deal['project'] ? Security::e($deal['project']) : '—' ?></td>
-                        <td style="font-size:13px"><?= $deal['category'] ? Security::e($deal['category']) : '—' ?></td>
-                        <td style="font-weight:600;color:var(--navy)">
-                            <?= $deal['investment_amount'] ? 'Rs. ' . number_format((float)$deal['investment_amount']) : '—' ?>
+                        <td style="font-size:13px">
+                            <?= $deal['project'] ? Security::e($deal['project']) : '—' ?>
+                            <?php if (!empty($deal['block']) || !empty($deal['unit_no'])): ?>
+                                <div style="font-size:11px;color:var(--text-muted)"><?= Security::e(trim(($deal['block'] ?? '') . ' ' . ($deal['unit_no'] ?? ''))) ?></div>
+                            <?php endif; ?>
                         </td>
-                        <td style="color:#10b981;font-weight:500">
+                        <td>
+                            <?php if ($isMature): ?>
+                                <span class="status-pill" style="background:#d1fae5;color:#065f46;border:1px solid #6ee7b7">Mature</span>
+                            <?php else: ?>
+                                <span class="status-pill" style="background:#fef3c7;color:#92400e;border:1px solid #fcd34d">Immature</span>
+                            <?php endif; ?>
+                        </td>
+                        <td style="font-weight:600;color:var(--navy)">
+                            <?= $dealAmt > 0 ? 'Rs. ' . number_format($dealAmt) : '—' ?>
+                        </td>
+                        <td style="color:<?= $isMature ? '#10b981' : '#f59e0b' ?>;font-weight:500">
                             <?= $dealComm > 0 ? 'Rs. ' . number_format($dealComm) : '—' ?>
                         </td>
                         <td style="font-size:12px;color:var(--text-muted)"><?= date('d M Y', strtotime($deal['updated_at'])) ?></td>
