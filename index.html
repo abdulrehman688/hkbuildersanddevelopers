@@ -38,6 +38,8 @@
   align-items: center;
   justify-content: center;
   overflow: hidden;
+  will-change: opacity;
+  transform: translateZ(0);
   transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.8s ease;
 }
 .hk-loader.hidden {
@@ -1026,7 +1028,7 @@
   //  PARTICLES
   // ================================================================
   const pc = document.getElementById('particles');
-  for (let i = 0; i < 25; i++) {
+  if (window.innerWidth >= 768) for (let i = 0; i < 10; i++) {
     const p = document.createElement('div'); p.className = 'particle';
     p.style.left = Math.random() * 100 + '%';
     p.style.animationDuration = (8 + Math.random() * 15) + 's';

@@ -105,11 +105,12 @@
   div.innerHTML = loaderHTML;
   document.documentElement.insertBefore(div.firstElementChild, document.documentElement.firstChild);
 
-  // Add floating particles
+  // Add floating particles (skip on mobile to save main thread)
   function addParticles() {
+    if (window.innerWidth < 768) return;
     const loader = document.getElementById('hkLoader');
     if (!loader) return;
-    for (let i = 0; i < 18; i++) {
+    for (let i = 0; i < 8; i++) {
       const p = document.createElement('div');
       p.className = 'hk-loader-particle';
       p.style.left = Math.random() * 100 + '%';
@@ -131,7 +132,7 @@
     addParticles();
 
     let progress = 0;
-    const minDuration = 400; // minimum display time in ms
+    const minDuration = 0;
     const startTime = Date.now();
 
     const phases = [
@@ -170,6 +171,7 @@
 
         setTimeout(() => {
           loader.classList.add('hidden');
+          setTimeout(() => { if (loader.parentNode) loader.parentNode.removeChild(loader); }, 900);
 
           // Reveal page content
           document.querySelectorAll('.page-reveal').forEach((el, i) => {
