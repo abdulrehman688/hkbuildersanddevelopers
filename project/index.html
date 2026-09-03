@@ -500,7 +500,7 @@
       <div class="hero-bg-layer"></div>
       <div class="hero-grid-layer"></div>
       <div class="hero-overlay"></div>
-      <div class="hero-illustration">${project.image?`<img src="${project.image}" alt="${project.name}" style="width:100%;height:100%;object-fit:cover;">`:getSVG(project.gallery[0]?.theme||'gate')}</div>
+      <div class="hero-illustration">${project.image?`<img src="${project.image}" alt="${project.name}" style="width:100%;height:100%;object-fit:cover;" fetchpriority="high" loading="eager">`:getSVG(project.gallery[0]?.theme||'gate')}</div>
       <div class="hero-content">
         <div class="hero-breadcrumb">
           <a href="/">Home</a>
@@ -575,7 +575,7 @@
         ${project.gallery.map((g,i)=>`
           <div class="masonry-item reveal" data-index="${i}">
             <div class="masonry-inner" style="background:linear-gradient(160deg,#0e2040,#152844);">
-              ${g.image?`<img src="${g.image}" alt="${g.caption||''}">`:getSVG(g.theme)}
+              ${g.image?`<img src="${g.image}" alt="${g.caption||''}" loading="lazy" decoding="async">`:getSVG(g.theme)}
             </div>
             <div class="masonry-overlay">
               <div class="masonry-caption">${g.caption}</div>
@@ -683,7 +683,7 @@
             <a href="/${r.id}" class="related-card reveal ${i>0?'reveal-delay-'+i:''}">
               <div class="rc-visual">
                 <div class="rc-vis-inner" style="background:${r.cardBg};">
-                  ${r.image?`<img src="${r.image}" alt="${r.name}" style="width:100%;height:100%;object-fit:cover;">`:getSVG(r.gallery[0]?.theme||'villa')}
+                  ${r.image?`<img src="${r.image}" alt="${r.name}" style="width:100%;height:100%;object-fit:cover;" loading="lazy" decoding="async">`:getSVG(r.gallery[0]?.theme||'villa')}
                 </div>
               </div>
               <div class="rc-body">

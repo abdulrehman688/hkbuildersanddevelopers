@@ -30,6 +30,7 @@
   <link rel="stylesheet" href="/assets/css/loader.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preload" href="/assets/images/projects/united-palm-green/main.jpg" as="image" fetchpriority="high">
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
   
   <script src="/assets/js/loader.js" defer></script>
@@ -317,7 +318,7 @@
   <!-- HERO -->
   <div class="page-hero">
     <div class="page-hero-bg"></div>
-    <img class="page-hero-photo" id="pageHeroPhoto" src="" alt="">
+    <img class="page-hero-photo" id="pageHeroPhoto" src="/assets/images/projects/united-palm-green/main.jpg" alt="United Palm Greens" fetchpriority="high" loading="eager" width="1920" height="800">
     <div class="page-hero-photo-overlay"></div>
     <div class="page-hero-grid"></div>
     <div class="page-hero-content">
@@ -560,9 +561,7 @@
     const obs=new IntersectionObserver(e=>{e.forEach(el=>{if(el.isIntersecting)el.target.classList.add('visible');});},{threshold:0.1});
     function bindReveal(){document.querySelectorAll('.reveal').forEach(el=>obs.observe(el));}
 
-    // Set hero background image
     const pageHeroPhoto = document.getElementById('pageHeroPhoto');
-    if (pageHeroPhoto) pageHeroPhoto.src = '/assets/images/projects/united-palm-green/main.jpg';
 
     bindReveal(); bindCursor();
 
