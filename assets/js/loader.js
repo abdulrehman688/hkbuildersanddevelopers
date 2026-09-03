@@ -179,11 +179,8 @@
       }, remaining);
     }
 
-    if (document.readyState === 'complete') {
-      finishLoading();
-    } else {
-      window.addEventListener('load', finishLoading);
-    }
+    // Fire immediately — don't wait for images/resources (deferred scripts run at DCL)
+    finishLoading();
   }
 
   // Run immediately
