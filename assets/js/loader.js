@@ -171,13 +171,11 @@
 
         setTimeout(() => {
           loader.classList.add('hidden');
-          setTimeout(() => { if (loader.parentNode) loader.parentNode.removeChild(loader); }, 900);
+          setTimeout(() => { if (loader.parentNode) loader.parentNode.removeChild(loader); }, 400);
 
           // Reveal page content
-          document.querySelectorAll('.page-reveal').forEach((el, i) => {
-            setTimeout(() => el.classList.add('loaded'), i * 80);
-          });
-        }, 400);
+          document.querySelectorAll('.page-reveal').forEach(el => el.classList.add('loaded'));
+        }, 0);
       }, remaining);
     }
 
