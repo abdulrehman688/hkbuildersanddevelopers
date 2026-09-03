@@ -131,7 +131,7 @@
     addParticles();
 
     let progress = 0;
-    const minDuration = 2200; // minimum display time in ms
+    const minDuration = 400; // minimum display time in ms
     const startTime = Date.now();
 
     const phases = [

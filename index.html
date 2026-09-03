@@ -30,9 +30,9 @@
   <link rel="stylesheet" href="assets/css/loader.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preload" href="/assets/images/projects/united-palm-green/main.jpg" as="image" fetchpriority="high">
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" integrity="sha512-2SwdPD6INVrV/lHTZbO2nodKhrnDdJK9/kg2XD1r9uGqPo1cUbujc+IYdlYdEErWNu69gVcYgdxlmVmzTWnetw==" crossorigin="anonymous" referrerpolicy="no-referrer"/>
-  <script src="assets/js/loader.js"></script>
+  <script src="assets/js/loader.js" defer></script>
   <style>
     :root{--navy:#0a1628;--navy-mid:#0e1e38;--navy-light:#152844;--gold:#c9a84c;--gold-light:#e2c97e;--gold-pale:#f0dfa0;--white:#ffffff;--white-dim:rgba(255,255,255,0.08);--white-muted:rgba(255,255,255,0.55);--gold-gradient:linear-gradient(135deg,#c9a84c 0%,#f0dfa0 50%,#c9a84c 100%);}
     *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
@@ -428,7 +428,7 @@
   <!-- HERO -->
   <section class="hero">
     <div class="hero-bg"></div>
-    <img class="hero-photo" id="heroPhoto" src="" alt="Featured project">
+    <img class="hero-photo" id="heroPhoto" src="/assets/images/projects/united-palm-green/main.jpg" alt="United Palm Greens featured project" fetchpriority="high" loading="eager" width="960" height="640">
     <div class="hero-photo-overlay"></div>
     <div class="hero-grid"></div>
     <div class="particles" id="particles"></div>
@@ -569,7 +569,7 @@
     </div>
     <div class="projects-grid">
       <div class="project-card reveal">
-        <img class="project-card-img" src="/assets/images/projects/united-palm-green/main.jpg" alt="United Palm Greens">
+        <img class="project-card-img" src="/assets/images/projects/united-palm-green/main.jpg" alt="United Palm Greens" loading="lazy" width="600" height="450">
         <div class="project-card-overlay"></div>
         <div class="project-card-content">
           <div class="project-card-number">01</div>
@@ -583,7 +583,7 @@
         </div>
       </div>
       <div class="project-card reveal reveal-delay-1">
-        <img class="project-card-img" src="/assets/images/projects/Falaknaz-wonder-city/main.jpg" alt="Falaknaz Wonder City">
+        <img class="project-card-img" src="/assets/images/projects/Falaknaz-wonder-city/main.jpg" alt="Falaknaz Wonder City" loading="lazy" width="600" height="450">
         <div class="project-card-overlay"></div>
         <div class="project-card-content">
           <div class="project-card-number">02</div>
@@ -597,7 +597,7 @@
         </div>
       </div>
       <div class="project-card reveal reveal-delay-2">
-        <img class="project-card-img" src="/assets/images/projects/falaknaz-hills-view/main.jpg" alt="Falaknaz Hills View">
+        <img class="project-card-img" src="/assets/images/projects/falaknaz-hills-view/main.jpg" alt="Falaknaz Hills View" loading="lazy" width="600" height="450">
         <div class="project-card-overlay"></div>
         <div class="project-card-content">
           <div class="project-card-number">03</div>
@@ -611,7 +611,7 @@
         </div>
       </div>
       <div class="project-card reveal reveal-delay-3">
-        <img class="project-card-img" src="/assets/images/projects/Falaknaz-overseas-block/main.jpg" alt="Falaknaz Overseas Block">
+        <img class="project-card-img" src="/assets/images/projects/Falaknaz-overseas-block/main.jpg" alt="Falaknaz Overseas Block" loading="lazy" width="600" height="450">
         <div class="project-card-overlay"></div>
         <div class="project-card-content">
           <div class="project-card-number">04</div>
@@ -743,7 +743,7 @@
   </footer>
 
   <a href="https://wa.me/923252208153?text=Hi%20HK%20Builders%20and%20Developers%2C%20I%27d%20like%20to%20get%20in%20touch." target="_blank" rel="noopener noreferrer" class="whatsapp-float-button" aria-label="Chat with us on WhatsApp">
-    <i class="fa-brands fa-whatsapp"></i>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="26" height="26" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
   </a>
 
   <script>
@@ -931,9 +931,7 @@
   // ================================================================
   //  INIT
   // ================================================================
-  // Set hero background image
   const heroPhoto = document.getElementById('heroPhoto');
-  if (heroPhoto) heroPhoto.src = '/assets/images/projects/united-palm-green/main.jpg';
 
   // Satisfied Clients gallery - render static data immediately (no JSON fetch)
   renderClientGallery(staticClientGallery);
