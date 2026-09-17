@@ -123,14 +123,16 @@ class Accounts {
         }
     }
 
-    public function getExpenses(string $type = '', int $month = 0, int $year = 0, int $agentId = 0): array {
+    public function getExpenses(string $type = '', int $month = 0, int $year = 0, int $agentId = 0, string $dateFrom = '', string $dateTo = ''): array {
         try {
             $where  = ['1=1'];
             $params = [];
-            if ($type)    { $where[] = 'e.type = ?';          $params[] = $type; }
-            if ($month)   { $where[] = 'e.expense_month = ?'; $params[] = $month; }
-            if ($year)    { $where[] = 'e.expense_year = ?';  $params[] = $year; }
-            if ($agentId) { $where[] = 'e.agent_id = ?';      $params[] = $agentId; }
+            if ($type)     { $where[] = 'e.type = ?';            $params[] = $type; }
+            if ($month)    { $where[] = 'e.expense_month = ?';   $params[] = $month; }
+            if ($year)     { $where[] = 'e.expense_year = ?';    $params[] = $year; }
+            if ($agentId)  { $where[] = 'e.agent_id = ?';        $params[] = $agentId; }
+            if ($dateFrom) { $where[] = 'e.expense_date >= ?';   $params[] = $dateFrom; }
+            if ($dateTo)   { $where[] = 'e.expense_date <= ?';   $params[] = $dateTo; }
 
             $stmt = $this->db->prepare("
                 SELECT e.*, u.name AS agent_name, cb.name AS created_by_name

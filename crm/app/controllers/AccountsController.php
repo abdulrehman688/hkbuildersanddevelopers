@@ -145,11 +145,36 @@ class AccountsController {
             exit;
         }
 
-        $type    = $_GET['type']  ?? '';
-        $month   = (int)($_GET['month'] ?? 0);
-        $year    = (int)($_GET['year']  ?? 0);
+        $type     = $_GET['type']      ?? '';
+        $period   = $_GET['period']    ?? '';
+        $dateFrom = trim($_GET['date_from'] ?? '');
+        $dateTo   = trim($_GET['date_to']   ?? '');
 
-        $expenses = $this->accounts->getExpenses($type, $month, $year);
+        // Resolve period shortcuts to concrete date range
+        $today = date('Y-m-d');
+        switch ($period) {
+            case 'today':
+                $dateFrom = $dateTo = $today; break;
+            case 'yesterday':
+                $dateFrom = $dateTo = date('Y-m-d', strtotime('-1 day')); break;
+            case 'this_week':
+                $dateFrom = date('Y-m-d', strtotime('monday this week'));
+                $dateTo   = $today; break;
+            case 'last_week':
+                $dateFrom = date('Y-m-d', strtotime('monday last week'));
+                $dateTo   = date('Y-m-d', strtotime('sunday last week')); break;
+            case 'this_month':
+                $dateFrom = date('Y-m-01');
+                $dateTo   = $today; break;
+            case 'last_month':
+                $dateFrom = date('Y-m-01', strtotime('first day of last month'));
+                $dateTo   = date('Y-m-t',  strtotime('last day of last month')); break;
+            case 'this_year':
+                $dateFrom = date('Y-01-01');
+                $dateTo   = $today; break;
+        }
+
+        $expenses = $this->accounts->getExpenses($type, 0, 0, 0, $dateFrom, $dateTo);
         $agents   = $this->accounts->getAgents();
         $stats    = $this->accounts->getExpenseStats();
 
