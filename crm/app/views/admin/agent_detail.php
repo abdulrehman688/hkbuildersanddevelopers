@@ -62,7 +62,7 @@ $chartWon    = json_encode(array_map(fn($r) => (int)$r['won'],   $monthlyTrend))
     <?php endif; ?>
 </form>
 
-<div style="display:grid;grid-template-columns:300px 1fr;gap:24px;align-items:start">
+<div class="agent-detail-grid" style="display:grid;grid-template-columns:300px 1fr;gap:24px;align-items:start">
 
     <!-- LEFT: Profile Card -->
     <div style="display:flex;flex-direction:column;gap:18px">
@@ -483,13 +483,45 @@ $chartWon    = json_encode(array_map(fn($r) => (int)$r['won'],   $monthlyTrend))
 
 <style>
 @media print {
-    .sidebar, .hamburger-btn, .sidebar-overlay, .page-header-actions, form[method="GET"] { display:none !important }
-    .main-content { margin:0 !important; padding:20px !important }
+    @page { size: A4 portrait; margin: 1.4cm 1.2cm; }
+
+    /* Hide all chrome */
+    .sidebar, .topbar, .hamburger-btn, .sidebar-overlay,
+    .page-header-actions, form[method="GET"], .breadcrumb,
+    .btn, a.btn { display: none !important; }
+
+    /* Full-width body */
+    body, html { background: #fff !important; color: #111 !important; }
+    .main-content  { margin: 0 !important; padding: 0 !important; width: 100% !important; max-width: 100% !important; }
+    .content-wrapper { padding: 0 !important; max-width: 100% !important; }
+
+    /* Collapse 2-col grid to single column */
+    .agent-detail-grid { grid-template-columns: 1fr !important; gap: 14px !important; }
+
+    /* Remove card shadows */
+    .card { box-shadow: none !important; border: 1px solid #ddd !important; margin-bottom: 10px !important; }
+
+    /* Tighten tables */
+    .data-table { font-size: 10px !important; width: 100% !important; table-layout: auto !important; }
+    .data-table th, .data-table td { padding: 5px 7px !important; white-space: normal !important; word-break: break-word; }
+    .data-table th { background: #002147 !important; color: #fff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    /* Hide action (last) column */
+    .data-table td:last-child, .data-table th:last-child { display: none !important; }
+
+    /* Hide chart canvas - can't print canvas */
+    canvas { display: none !important; }
+
+    /* Print header */
+    .page-header h1 { font-size: 18px !important; }
     body::before {
-        content: "HK Builders & Developers — Agent Report — <?= date('d M Y') ?>";
-        display:block; font-size:13px; color:#666; margin-bottom:20px;
-        border-bottom:2px solid #c9a84c; padding-bottom:10px;
+        content: "HK Builders & Developers  -  Agent Performance Report  -  <?= date('d M Y') ?>";
+        display: block; font-size: 12px; font-weight: 600; color: #002147;
+        border-bottom: 2px solid #c9a84c; padding-bottom: 8px; margin-bottom: 14px;
     }
+
+    /* Avoid page breaks inside cards */
+    .card { page-break-inside: avoid; }
+    .stats-grid { page-break-inside: avoid; }
 }
 </style>
 
