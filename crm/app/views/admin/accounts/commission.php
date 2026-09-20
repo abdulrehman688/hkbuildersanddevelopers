@@ -153,8 +153,7 @@ ob_start();
         <tr>
             <th>Agent</th>
             <th>Client / Project</th>
-            <th>Total</th>
-            <th>Paid</th>
+            <th>Commission</th>
             <th>Due</th>
             <th>Sale Date</th>
             <th>Source</th>
@@ -185,8 +184,7 @@ ob_start();
             <?php endif; ?>
         </td>
         <td style="font-weight:600;color:var(--gold)"><?= $pkr($c['total_commission']) ?></td>
-        <td style="color:#10b981"><?= $pkr($c['paid_amount']) ?></td>
-        <td style="color:<?= $rem > 0 ? '#ef4444' : 'var(--text-muted)' ?>"><?= $pkr($rem) ?></td>
+        <td style="color:<?= $rem > 0 ? '#ef4444' : '#10b981' ?>;font-weight:600"><?= $rem > 0 ? $pkr($rem) : 'Paid' ?></td>
         <td style="font-size:12px;color:var(--text-muted)">
             <?php if ($c['sale_date']): ?>
                 <?= date('d M Y', strtotime($c['sale_date'])) ?>
@@ -294,13 +292,9 @@ ob_start();
                         <label class="form-label">Plot / File No.</label>
                         <input type="text" name="plot_number" class="form-input" placeholder="Plot or file number">
                     </div>
-                    <div class="form-group">
+                    <div class="form-group" style="grid-column:1/-1">
                         <label class="form-label">Total Commission (PKR) *</label>
                         <input type="number" step="1" min="0" name="total_commission" class="form-input" value="0" required>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Paid Amount (PKR)</label>
-                        <input type="number" step="1" min="0" name="paid_amount" class="form-input" value="0">
                     </div>
                     <div class="form-group">
                         <label class="form-label">Sale Date</label>
@@ -446,7 +440,6 @@ function editComm(data) {
         client_name: data.client_name || '',
         plot_number: data.plot_number || '',
         total_commission: data.total_commission,
-        paid_amount: data.paid_amount,
         sale_date: data.sale_date ? data.sale_date.substring(0,10) : '',
         due_date:  data.due_date  ? data.due_date.substring(0,10)  : '',
         maturity_status: data.maturity_status,

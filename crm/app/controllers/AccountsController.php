@@ -101,10 +101,12 @@ class AccountsController {
     }
 
     private function commissionPayload(int $uid): array {
-        $saleDate = trim($_POST['sale_date'] ?? '');
-        $dueDate  = trim($_POST['due_date']  ?? '');
-        $ts = $saleDate ? (strtotime($saleDate) ?: time()) : time();
-        $sources = ['cash','online','cheque','bank_transfer','other'];
+        $saleDate      = trim($_POST['sale_date'] ?? '');
+        $dueDate       = trim($_POST['due_date']  ?? '');
+        $ts            = $saleDate ? (strtotime($saleDate) ?: time()) : time();
+        $sources       = ['cash','online','cheque','bank_transfer','other'];
+        $paymentStatus = ($_POST['payment_status'] ?? '') === 'paid' ? 'paid' : 'pending';
+        $totalComm     = (float)($_POST['total_commission'] ?? 0);
         return [
             'agent_id'          => (int)($_POST['agent_id']    ?? 0),
             'lead_id'           => (int)($_POST['lead_id']     ?? 0),
@@ -112,10 +114,10 @@ class AccountsController {
             'client_name'       => trim($_POST['client_name']  ?? ''),
             'project'           => trim($_POST['project_name_text'] ?? ''),
             'plot_number'       => trim($_POST['plot_number']  ?? ''),
-            'total_commission'  => (float)($_POST['total_commission'] ?? 0),
+            'total_commission'  => $totalComm,
             'maturity_status'   => ($_POST['maturity_status'] ?? '') === 'mature' ? 'mature' : 'immature',
-            'payment_status'    => ($_POST['payment_status']  ?? '') === 'paid'   ? 'paid'   : 'pending',
-            'paid_amount'       => (float)($_POST['paid_amount'] ?? 0),
+            'payment_status'    => $paymentStatus,
+            'paid_amount'       => $paymentStatus === 'paid' ? $totalComm : 0,
             'payment_source'    => in_array($_POST['payment_source'] ?? '', $sources, true) ? $_POST['payment_source'] : null,
             'reference_no'      => trim($_POST['reference_no'] ?? ''),
             'pending_reason_id' => (int)($_POST['pending_reason_id'] ?? 0),
