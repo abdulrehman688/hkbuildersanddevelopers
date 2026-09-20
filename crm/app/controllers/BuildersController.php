@@ -15,6 +15,7 @@ class BuildersController {
     public function handle(?string $param, ?string $sub): void {
         match($param ?: 'list') {
             'projects'  => $this->projects(),
+            'units'     => $this->units(),
             'payments'  => $this->payments(),
             'detail'    => $this->detail((int)($sub ?? 0)),
             'statement' => $this->statement((int)($sub ?? 0)),
@@ -138,6 +139,87 @@ class BuildersController {
             'status'       => in_array($_POST['status'] ?? '', $statuses, true) ? $_POST['status'] : 'active',
             'notes'        => trim($_POST['notes']        ?? ''),
             'created_by'   => $uid,
+        ];
+    }
+
+    // ---- Units ----
+
+    private function units(): void {
+        $uid = (int)$_SESSION['user_id'];
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            if (!Security::verifyCsrfToken($_POST['csrf_token'] ?? '')) {
+                $_SESSION['error'] = 'Invalid request.';
+                header('Location: ' . APP_URL . '/admin/builders/units');
+                exit;
+            }
+            $act = $_POST['form_action'] ?? '';
+
+            if ($act === 'add') {
+                $id = $this->builder->addUnit($this->unitPayload($uid));
+                AuditLog::log('builder_unit_added', $uid, 'builder_unit', $id, 'Unit added.');
+                $_SESSION['success'] = 'Unit added.';
+
+            } elseif ($act === 'edit') {
+                $id = (int)($_POST['unit_id'] ?? 0);
+                if ($id) {
+                    $this->builder->updateUnit($id, $this->unitPayload($uid));
+                    AuditLog::log('builder_unit_updated', $uid, 'builder_unit', $id, 'Unit updated.');
+                    $_SESSION['success'] = 'Unit updated.';
+                }
+
+            } elseif ($act === 'toggle') {
+                $id = (int)($_POST['unit_id'] ?? 0);
+                if ($id) {
+                    $this->builder->toggleUnitCommission($id);
+                    AuditLog::log('builder_unit_toggled', $uid, 'builder_unit', $id, 'Commission status toggled.');
+                    $_SESSION['success'] = 'Commission status updated.';
+                }
+
+            } elseif ($act === 'delete') {
+                $id = (int)($_POST['unit_id'] ?? 0);
+                if ($id) {
+                    $this->builder->deleteUnit($id);
+                    AuditLog::log('builder_unit_deleted', $uid, 'builder_unit', $id, 'Unit deleted.');
+                    $_SESSION['success'] = 'Unit deleted.';
+                }
+            }
+
+            $qs = http_build_query(array_filter([
+                'builder_id' => (int)($_POST['f_builder_id'] ?? 0) ?: null,
+                'project_id' => (int)($_POST['f_project_id'] ?? 0) ?: null,
+                'status'     => $_POST['f_status'] ?? '',
+            ]));
+            header('Location: ' . APP_URL . '/admin/builders/units' . ($qs ? '?' . $qs : ''));
+            exit;
+        }
+
+        $fBuilderId = (int)($_GET['builder_id'] ?? 0);
+        $fProjectId = (int)($_GET['project_id'] ?? 0);
+        $fStatus    = $_GET['status'] ?? '';
+
+        $units       = $this->builder->getUnits($fBuilderId, $fProjectId, $fStatus);
+        $unitStats   = $this->builder->getUnitStats($fBuilderId, $fProjectId);
+        $allBuilders = $this->builder->getAllBuilders();
+        $allProjects = $this->builder->getProjects();
+        require APP_ROOT . '/app/views/admin/builders/units.php';
+    }
+
+    private function unitPayload(int $uid): array {
+        $statuses = ['unpaid', 'paid'];
+        return [
+            'builder_id'        => (int)($_POST['builder_id']        ?? 0),
+            'project_id'        => (int)($_POST['project_id']        ?? 0),
+            'unit_number'       => trim($_POST['unit_number']        ?? ''),
+            'block_number'      => trim($_POST['block_number']       ?? ''),
+            'category'          => trim($_POST['category']           ?? ''),
+            'plot_size'         => trim($_POST['plot_size']          ?? ''),
+            'total_cost'        => (float)($_POST['total_cost']      ?? 0),
+            'down_payment'      => (float)($_POST['down_payment']    ?? 0),
+            'commission_amount' => (float)($_POST['commission_amount'] ?? 0),
+            'commission_status' => in_array($_POST['commission_status'] ?? '', $statuses, true) ? $_POST['commission_status'] : 'unpaid',
+            'notes'             => trim($_POST['notes']              ?? ''),
+            'created_by'        => $uid,
         ];
     }
 

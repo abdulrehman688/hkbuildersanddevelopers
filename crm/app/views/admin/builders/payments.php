@@ -43,6 +43,7 @@ ob_start();
     <?php foreach ([
         [APP_URL.'/admin/builders',          'Builders', false],
         [APP_URL.'/admin/builders/projects', 'Projects', false],
+        [APP_URL.'/admin/builders/units',    'Units',    false],
         [APP_URL.'/admin/builders/payments', 'Payments', true],
     ] as [$url, $label, $active]): ?>
     <a href="<?= $url ?>" style="

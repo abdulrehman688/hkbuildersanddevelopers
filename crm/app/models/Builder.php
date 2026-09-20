@@ -215,4 +215,94 @@ class Builder {
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (\Throwable $e) { return []; }
     }
+
+    // ---- Units ----
+
+    public function getUnits(int $builderId = 0, int $projectId = 0, string $status = ''): array {
+        try {
+            $where  = ['1=1'];
+            $params = [];
+            if ($builderId) { $where[] = 'u.builder_id = ?';          $params[] = $builderId; }
+            if ($projectId) { $where[] = 'u.project_id = ?';          $params[] = $projectId; }
+            if ($status)    { $where[] = 'u.commission_status = ?';    $params[] = $status; }
+            $stmt = $this->db->prepare("
+                SELECT u.*,
+                    b.name  AS builder_name,
+                    bp.name AS project_name,
+                    uc.name AS created_by_name
+                FROM builder_units u
+                LEFT JOIN builders         b  ON b.id  = u.builder_id
+                LEFT JOIN builder_projects bp ON bp.id = u.project_id
+                LEFT JOIN users            uc ON uc.id = u.created_by
+                WHERE " . implode(' AND ', $where) . "
+                ORDER BY b.name, bp.name, u.unit_number ASC
+            ");
+            $stmt->execute($params);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (\Throwable $e) {
+            error_log('Builder::getUnits - ' . $e->getMessage());
+            return [];
+        }
+    }
+
+    public function getUnitStats(int $builderId = 0, int $projectId = 0): array {
+        try {
+            $where  = ['1=1'];
+            $params = [];
+            if ($builderId) { $where[] = 'builder_id = ?'; $params[] = $builderId; }
+            if ($projectId) { $where[] = 'project_id = ?'; $params[] = $projectId; }
+            $w = implode(' AND ', $where);
+            $row = $this->db->prepare("
+                SELECT
+                    COUNT(*) AS total_units,
+                    SUM(commission_amount) AS total_commission,
+                    SUM(CASE WHEN commission_status='paid'   THEN commission_amount ELSE 0 END) AS paid_commission,
+                    SUM(CASE WHEN commission_status='unpaid' THEN commission_amount ELSE 0 END) AS unpaid_commission
+                FROM builder_units WHERE $w
+            ");
+            $row->execute($params);
+            return $row->fetch(PDO::FETCH_ASSOC) ?: [];
+        } catch (\Throwable $e) { return []; }
+    }
+
+    public function addUnit(array $d): int {
+        $this->db->prepare("
+            INSERT INTO builder_units
+                (builder_id, project_id, unit_number, block_number, category, plot_size,
+                 total_cost, down_payment, commission_amount, commission_status, notes, created_by)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?)
+        ")->execute([
+            $d['builder_id'], $d['project_id'], $d['unit_number'], $d['block_number'] ?: null,
+            $d['category'] ?: null, $d['plot_size'] ?: null,
+            $d['total_cost'], $d['down_payment'], $d['commission_amount'],
+            $d['commission_status'], $d['notes'] ?: null, $d['created_by'],
+        ]);
+        return (int)$this->db->lastInsertId();
+    }
+
+    public function updateUnit(int $id, array $d): void {
+        $this->db->prepare("
+            UPDATE builder_units SET
+                builder_id=?, project_id=?, unit_number=?, block_number=?, category=?, plot_size=?,
+                total_cost=?, down_payment=?, commission_amount=?, commission_status=?, notes=?
+            WHERE id=?
+        ")->execute([
+            $d['builder_id'], $d['project_id'], $d['unit_number'], $d['block_number'] ?: null,
+            $d['category'] ?: null, $d['plot_size'] ?: null,
+            $d['total_cost'], $d['down_payment'], $d['commission_amount'],
+            $d['commission_status'], $d['notes'] ?: null, $id,
+        ]);
+    }
+
+    public function deleteUnit(int $id): void {
+        $this->db->prepare("DELETE FROM builder_units WHERE id=?")->execute([$id]);
+    }
+
+    public function toggleUnitCommission(int $id): void {
+        $this->db->prepare("
+            UPDATE builder_units
+            SET commission_status = CASE WHEN commission_status='paid' THEN 'unpaid' ELSE 'paid' END
+            WHERE id=?
+        ")->execute([$id]);
+    }
 }
