@@ -14,10 +14,11 @@ class AccountsController {
 
     public function accounts(?string $sub): void {
         match($sub ?: 'overview') {
-            'commission' => $this->commission(),
-            'expenses'   => $this->expenses(),
-            'salaries'   => $this->salaries(),
-            default      => $this->overview(),
+            'commission'       => $this->commission(),
+            'commission-ajax'  => $this->commissionAjax(),
+            'expenses'         => $this->expenses(),
+            'salaries'         => $this->salaries(),
+            default            => $this->overview(),
         };
     }
 
@@ -79,27 +80,50 @@ class AccountsController {
 
         $commissions    = $this->accounts->getCommissions($filters);
         $agents         = $this->accounts->getAgents();
+        $allProjects    = $this->accounts->getAllProjects();
         $pendingReasons = $this->accounts->getPendingReasons();
         $stats          = $this->accounts->getCommissionStats();
 
         require APP_ROOT . '/app/views/admin/accounts/commission.php';
     }
 
+    private function commissionAjax(): void {
+        Security::requireAdmin();
+        header('Content-Type: application/json');
+        $agentId   = (int)($_GET['agent_id']   ?? 0);
+        $projectId = (int)($_GET['project_id'] ?? 0);
+        if (!$agentId || !$projectId) {
+            echo json_encode(['records' => 0, 'total_commission' => 0, 'paid_amount' => 0, 'remaining' => 0]);
+            exit;
+        }
+        echo json_encode($this->accounts->getAgentProjectSummary($agentId, $projectId));
+        exit;
+    }
+
     private function commissionPayload(int $uid): array {
+        $saleDate = trim($_POST['sale_date'] ?? '');
+        $dueDate  = trim($_POST['due_date']  ?? '');
+        $ts = $saleDate ? (strtotime($saleDate) ?: time()) : time();
+        $sources = ['cash','online','cheque','bank_transfer','other'];
         return [
-            'agent_id'          => (int)($_POST['agent_id'] ?? 0),
-            'lead_id'           => (int)($_POST['lead_id']  ?? 0),
+            'agent_id'          => (int)($_POST['agent_id']    ?? 0),
+            'lead_id'           => (int)($_POST['lead_id']     ?? 0),
+            'project_id'        => (int)($_POST['project_id']  ?? 0),
             'client_name'       => trim($_POST['client_name']  ?? ''),
-            'project'           => trim($_POST['project']      ?? ''),
+            'project'           => trim($_POST['project_name_text'] ?? ''),
             'plot_number'       => trim($_POST['plot_number']  ?? ''),
             'total_commission'  => (float)($_POST['total_commission'] ?? 0),
             'maturity_status'   => ($_POST['maturity_status'] ?? '') === 'mature' ? 'mature' : 'immature',
             'payment_status'    => ($_POST['payment_status']  ?? '') === 'paid'   ? 'paid'   : 'pending',
             'paid_amount'       => (float)($_POST['paid_amount'] ?? 0),
+            'payment_source'    => in_array($_POST['payment_source'] ?? '', $sources, true) ? $_POST['payment_source'] : null,
+            'reference_no'      => trim($_POST['reference_no'] ?? ''),
             'pending_reason_id' => (int)($_POST['pending_reason_id'] ?? 0),
             'pending_notes'     => trim($_POST['pending_notes'] ?? ''),
-            'sale_month'        => (int)($_POST['sale_month'] ?? 0),
-            'sale_year'         => (int)($_POST['sale_year']  ?? 0),
+            'sale_date'         => $saleDate ?: null,
+            'sale_month'        => $saleDate ? (int)date('n', $ts) : (int)($_POST['sale_month'] ?? 0),
+            'sale_year'         => $saleDate ? (int)date('Y', $ts) : (int)($_POST['sale_year']  ?? 0),
+            'due_date'          => $dueDate ?: null,
             'notes'             => trim($_POST['notes'] ?? ''),
             'created_by'        => $uid,
         ];

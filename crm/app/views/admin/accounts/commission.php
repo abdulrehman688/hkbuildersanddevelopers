@@ -1,7 +1,7 @@
 <?php
 Security::requireAdmin();
 
-$pageTitle  = 'Accounts — Commission';
+$pageTitle  = 'Accounts - Commission';
 $activePage = 'accounts';
 
 $monthNames = ['','January','February','March','April','May','June','July','August','September','October','November','December'];
@@ -12,6 +12,8 @@ $fMaturity = $_GET['maturity_status'] ?? '';
 $fPayment  = $_GET['payment_status']  ?? '';
 $fMonth    = (int)($_GET['sale_month'] ?? 0);
 $fYear     = (int)($_GET['sale_year']  ?? 0);
+
+$sourceLabels = ['cash' => 'Cash', 'online' => 'Online', 'cheque' => 'Cheque', 'bank_transfer' => 'Bank Transfer', 'other' => 'Other'];
 
 ob_start();
 ?>
@@ -61,8 +63,8 @@ ob_start();
     <?php endforeach; ?>
 </div>
 
-<!-- Stat chips -->
-<div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:20px">
+<!-- Count chips -->
+<div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:14px">
     <?php foreach ([
         ['Total',    (int)($stats['total_entries']  ?? 0), '#6b7280', ''],
         ['Mature',   (int)($stats['mature_count']   ?? 0), '#10b981', '?maturity_status=mature'],
@@ -71,22 +73,40 @@ ob_start();
         ['Pending',  (int)($stats['pending_count']  ?? 0), '#ef4444', '?payment_status=pending'],
     ] as [$label, $count, $color, $qs]): ?>
     <a href="<?= APP_URL . '/admin/accounts/commission' . $qs ?>" style="text-decoration:none">
-        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:8px 16px;display:flex;align-items:center;gap:8px">
-            <span style="font-size:18px;font-weight:700;color:<?= $color ?>"><?= $count ?></span>
+        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:7px 14px;display:flex;align-items:center;gap:7px">
+            <span style="font-size:17px;font-weight:700;color:<?= $color ?>"><?= $count ?></span>
             <span style="font-size:12px;color:var(--text-muted)"><?= $label ?></span>
         </div>
     </a>
     <?php endforeach; ?>
-    <?php foreach ([
-        [$pkr($stats['total_commission'] ?? 0), '#c9a84c', 'Total Comm'],
-        [$pkr($stats['total_paid']       ?? 0), '#10b981', 'Paid'],
-        [$pkr($stats['total_remaining']  ?? 0), '#ef4444', 'Due'],
-    ] as [$amount, $color, $label]): ?>
-    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:8px 16px">
-        <span style="font-size:15px;font-weight:700;color:<?= $color ?>"><?= $amount ?></span>
-        <span style="font-size:12px;color:var(--text-muted);margin-left:6px"><?= $label ?></span>
+</div>
+
+<!-- Financial chips (auto-calculated, read-only) -->
+<div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:22px">
+    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:10px 18px;min-width:160px">
+        <div style="font-size:11px;color:var(--text-muted);margin-bottom:3px;text-transform:uppercase;letter-spacing:.5px">Total Commission</div>
+        <div style="font-size:17px;font-weight:700;color:var(--gold)"><?= $pkr($stats['total_commission'] ?? 0) ?></div>
     </div>
-    <?php endforeach; ?>
+    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:10px 18px;min-width:160px">
+        <div style="font-size:11px;color:var(--text-muted);margin-bottom:3px;text-transform:uppercase;letter-spacing:.5px">Total Paid</div>
+        <div style="font-size:17px;font-weight:700;color:#10b981"><?= $pkr($stats['total_paid'] ?? 0) ?></div>
+    </div>
+    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:10px 18px;min-width:160px">
+        <div style="font-size:11px;color:var(--text-muted);margin-bottom:3px;text-transform:uppercase;letter-spacing:.5px">Remaining</div>
+        <div style="font-size:17px;font-weight:700;color:#ef4444"><?= $pkr($stats['total_remaining'] ?? 0) ?></div>
+    </div>
+    <?php if (($stats['recently_paid_amount'] ?? 0) > 0): ?>
+    <div style="background:var(--bg-card);border:1px solid rgba(59,130,246,.3);border-radius:8px;padding:10px 18px;min-width:160px">
+        <div style="font-size:11px;color:var(--text-muted);margin-bottom:3px;text-transform:uppercase;letter-spacing:.5px">Recently Paid</div>
+        <div style="font-size:17px;font-weight:700;color:#3b82f6"><?= $pkr($stats['recently_paid_amount']) ?></div>
+        <?php if ($stats['recently_paid_agent'] || $stats['recently_paid_date']): ?>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:2px">
+            <?= Security::e($stats['recently_paid_agent']) ?>
+            <?= $stats['recently_paid_date'] ? ' &middot; ' . date('d M Y', strtotime($stats['recently_paid_date'])) : '' ?>
+        </div>
+        <?php endif; ?>
+    </div>
+    <?php endif; ?>
 </div>
 
 <!-- Filters -->
@@ -128,7 +148,7 @@ ob_start();
 <div style="padding:48px;text-align:center;color:var(--text-muted)">No commission records found.</div>
 <?php else: ?>
 <div style="overflow-x:auto">
-<table class="data-table" style="min-width:860px">
+<table class="data-table" style="min-width:1000px">
     <thead>
         <tr>
             <th>Agent</th>
@@ -136,27 +156,52 @@ ob_start();
             <th>Total</th>
             <th>Paid</th>
             <th>Due</th>
+            <th>Sale Date</th>
+            <th>Source</th>
+            <th>Ref No.</th>
             <th>Maturity</th>
             <th>Payment</th>
-            <th>Period</th>
             <th></th>
         </tr>
     </thead>
     <tbody>
-    <?php foreach ($commissions as $c): $rem = (float)$c['total_commission'] - (float)$c['paid_amount']; ?>
-    <tr>
+    <?php foreach ($commissions as $c):
+        $rem      = (float)$c['total_commission'] - (float)$c['paid_amount'];
+        $projName = $c['project_name'] ?: $c['project'] ?: '-';
+        $isOverdue = $c['due_date'] && $c['payment_status'] === 'pending' && strtotime($c['due_date']) < time();
+    ?>
+    <tr <?= $isOverdue ? 'style="background:rgba(239,68,68,.04)"' : '' ?>>
         <td><?= Security::e($c['agent_name'] ?? '-') ?></td>
         <td>
             <div style="font-weight:600"><?= Security::e($c['client_name'] ?: '-') ?></div>
-            <?php if ($c['project']): ?>
             <div style="font-size:12px;color:var(--text-muted)">
-                <?= Security::e($c['project']) ?><?= $c['plot_number'] ? ' &middot; Plot ' . Security::e($c['plot_number']) : '' ?>
+                <?= Security::e($projName) ?>
+                <?= $c['plot_number'] ? ' &middot; Plot ' . Security::e($c['plot_number']) : '' ?>
+            </div>
+            <?php if ($c['due_date'] && $c['payment_status'] === 'pending'): ?>
+            <div style="font-size:11px;color:<?= $isOverdue ? '#ef4444' : '#f59e0b' ?>">
+                Due: <?= date('d M Y', strtotime($c['due_date'])) ?><?= $isOverdue ? ' (overdue)' : '' ?>
             </div>
             <?php endif; ?>
         </td>
         <td style="font-weight:600;color:var(--gold)"><?= $pkr($c['total_commission']) ?></td>
         <td style="color:#10b981"><?= $pkr($c['paid_amount']) ?></td>
         <td style="color:<?= $rem > 0 ? '#ef4444' : 'var(--text-muted)' ?>"><?= $pkr($rem) ?></td>
+        <td style="font-size:12px;color:var(--text-muted)">
+            <?php if ($c['sale_date']): ?>
+                <?= date('d M Y', strtotime($c['sale_date'])) ?>
+            <?php elseif ($c['sale_month']): ?>
+                <?= $monthNames[(int)$c['sale_month']] . ' ' . $c['sale_year'] ?>
+            <?php else: ?>-<?php endif; ?>
+        </td>
+        <td style="font-size:12px">
+            <?php if ($c['payment_source']): ?>
+            <span style="padding:2px 8px;border-radius:10px;background:var(--bg);border:1px solid var(--border);font-size:11px">
+                <?= $sourceLabels[$c['payment_source']] ?? ucfirst($c['payment_source']) ?>
+            </span>
+            <?php else: ?>-<?php endif; ?>
+        </td>
+        <td style="font-size:12px;color:var(--text-muted)"><?= $c['reference_no'] ? Security::e($c['reference_no']) : '-' ?></td>
         <td>
             <span style="padding:3px 10px;border-radius:12px;font-size:11px;font-weight:600;
                 background:<?= $c['maturity_status'] === 'mature' ? 'rgba(16,185,129,.12)' : 'rgba(245,158,11,.12)' ?>;
@@ -173,9 +218,6 @@ ob_start();
             <?php if ($c['payment_status'] === 'pending' && $c['pending_reason_text']): ?>
             <div style="font-size:11px;color:var(--text-muted);margin-top:2px"><?= Security::e($c['pending_reason_text']) ?></div>
             <?php endif; ?>
-        </td>
-        <td style="font-size:12px;color:var(--text-muted)">
-            <?= $c['sale_month'] ? $monthNames[(int)$c['sale_month']] . ' ' . $c['sale_year'] : '-' ?>
         </td>
         <td>
             <div style="display:flex;gap:6px">
@@ -199,7 +241,7 @@ ob_start();
 
 <!-- Add Modal -->
 <div class="modal-overlay" id="addCommModal">
-    <div class="modal" style="max-width:620px;width:96%">
+    <div class="modal" style="max-width:640px;width:96%">
         <div class="modal-header">
             <h3>Add Commission Record</h3>
             <button class="modal-close" onclick="closeModal('addCommModal')">
@@ -209,11 +251,13 @@ ob_start();
         <form method="POST" action="<?= APP_URL ?>/admin/accounts/commission">
             <?= Security::csrfField() ?>
             <input type="hidden" name="form_action" value="add">
-            <div class="modal-body">
+            <div class="modal-body" id="addCommBody">
+
+                <!-- Agent + Project -->
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
                     <div class="form-group">
                         <label class="form-label">Agent *</label>
-                        <select name="agent_id" class="form-input" required>
+                        <select name="agent_id" class="form-input" required id="addAgentSel" onchange="onAgentOrProjectChange()">
                             <option value="">-- Select Agent --</option>
                             <?php foreach ($agents as $a): ?>
                             <option value="<?= $a['id'] ?>"><?= Security::e($a['name']) ?></option>
@@ -221,16 +265,34 @@ ob_start();
                         </select>
                     </div>
                     <div class="form-group">
+                        <label class="form-label">Project</label>
+                        <select name="project_id" class="form-input" id="addProjectSel" onchange="onAgentOrProjectChange()">
+                            <option value="">-- Select Project --</option>
+                            <?php foreach ($allProjects as $p): ?>
+                            <option value="<?= $p['id'] ?>" data-builder="<?= Security::e($p['builder_name']) ?>"><?= Security::e($p['name']) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Summary badge (shown when agent+project both selected) -->
+                <div id="addCommSummary" style="display:none;background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.25);border-radius:8px;padding:10px 14px;font-size:12px;margin-top:-4px">
+                    <span style="font-weight:600;color:var(--navy)">Existing records for this agent + project:</span>
+                    <div style="display:flex;gap:18px;margin-top:6px">
+                        <span>Total: <strong id="sumTotal">-</strong></span>
+                        <span>Already Paid: <strong id="sumPaid" style="color:#10b981">-</strong></span>
+                        <span>Remaining: <strong id="sumRemain" style="color:#ef4444">-</strong></span>
+                    </div>
+                </div>
+
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+                    <div class="form-group">
                         <label class="form-label">Client Name</label>
                         <input type="text" name="client_name" class="form-input" placeholder="Client name">
                     </div>
                     <div class="form-group">
-                        <label class="form-label">Project</label>
-                        <input type="text" name="project" class="form-input" placeholder="Project name">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Plot No.</label>
-                        <input type="text" name="plot_number" class="form-input" placeholder="Plot / File no.">
+                        <label class="form-label">Plot / File No.</label>
+                        <input type="text" name="plot_number" class="form-input" placeholder="Plot or file number">
                     </div>
                     <div class="form-group">
                         <label class="form-label">Total Commission (PKR) *</label>
@@ -241,6 +303,14 @@ ob_start();
                         <input type="number" step="1" min="0" name="paid_amount" class="form-input" value="0">
                     </div>
                     <div class="form-group">
+                        <label class="form-label">Sale Date</label>
+                        <input type="date" name="sale_date" class="form-input" value="<?= date('Y-m-d') ?>">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Due Date</label>
+                        <input type="date" name="due_date" class="form-input">
+                    </div>
+                    <div class="form-group">
                         <label class="form-label">Maturity Status</label>
                         <select name="maturity_status" class="form-input">
                             <option value="immature">Immature</option>
@@ -249,10 +319,25 @@ ob_start();
                     </div>
                     <div class="form-group">
                         <label class="form-label">Payment Status</label>
-                        <select name="payment_status" class="form-input">
+                        <select name="payment_status" class="form-input" id="addPaymentStatus" onchange="togglePaidFields(this,'add')">
                             <option value="pending">Pending</option>
                             <option value="paid">Paid</option>
                         </select>
+                    </div>
+                    <div class="form-group" id="addSourceRow">
+                        <label class="form-label">Payment Source</label>
+                        <select name="payment_source" class="form-input" id="addSourceSel" onchange="toggleRefField(this,'add')">
+                            <option value="">-- Select --</option>
+                            <option value="cash">Cash</option>
+                            <option value="online">Online Transfer</option>
+                            <option value="cheque">Cheque</option>
+                            <option value="bank_transfer">Bank Transfer</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group" id="addRefRow">
+                        <label class="form-label">Reference / Cheque No.</label>
+                        <input type="text" name="reference_no" class="form-input" placeholder="Ref or cheque number">
                     </div>
                     <div class="form-group">
                         <label class="form-label">Pending Reason</label>
@@ -262,19 +347,6 @@ ob_start();
                             <option value="<?= $r['id'] ?>"><?= Security::e($r['reason']) ?></option>
                             <?php endforeach; ?>
                         </select>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Sale Month</label>
-                        <select name="sale_month" class="form-input">
-                            <option value="">-- Month --</option>
-                            <?php for ($m = 1; $m <= 12; $m++): ?>
-                            <option value="<?= $m ?>"><?= $monthNames[$m] ?></option>
-                            <?php endfor; ?>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Sale Year</label>
-                        <input type="number" name="sale_year" class="form-input" placeholder="<?= date('Y') ?>" value="<?= date('Y') ?>">
                     </div>
                 </div>
                 <div class="form-group">
@@ -296,7 +368,7 @@ ob_start();
 
 <!-- Edit Modal -->
 <div class="modal-overlay" id="editCommModal">
-    <div class="modal" style="max-width:620px;width:96%">
+    <div class="modal" style="max-width:640px;width:96%">
         <div class="modal-header">
             <h3>Edit Commission Record</h3>
             <button class="modal-close" onclick="closeModal('editCommModal')">
@@ -317,20 +389,73 @@ ob_start();
 </div>
 
 <script>
+const AJAX_URL = '<?= APP_URL ?>/admin/accounts/commission-ajax';
+
+function fmtPKR(n) {
+    return 'PKR ' + Number(n).toLocaleString('en-PK', {maximumFractionDigits:0});
+}
+
+function onAgentOrProjectChange() {
+    const agentId   = document.getElementById('addAgentSel').value;
+    const projectId = document.getElementById('addProjectSel').value;
+    const box = document.getElementById('addCommSummary');
+    if (!agentId || !projectId) { box.style.display = 'none'; return; }
+    fetch(AJAX_URL + '?agent_id=' + agentId + '&project_id=' + projectId)
+        .then(r => r.json())
+        .then(d => {
+            if (!d.records) { box.style.display = 'none'; return; }
+            document.getElementById('sumTotal').textContent  = fmtPKR(d.total_commission);
+            document.getElementById('sumPaid').textContent   = fmtPKR(d.paid_amount);
+            document.getElementById('sumRemain').textContent = fmtPKR(d.remaining);
+            box.style.display = 'block';
+        })
+        .catch(() => { box.style.display = 'none'; });
+}
+
+function toggleRefField(sel, prefix) {
+    const refRow = document.getElementById(prefix + 'RefRow');
+    if (!refRow) return;
+    const showRef = ['online','cheque','bank_transfer'].includes(sel.value);
+    refRow.style.display = showRef ? '' : 'none';
+}
+
 function editComm(data) {
     document.getElementById('editCommId').value = data.id;
-    const src = document.querySelector('#addCommModal .modal-body');
+    const src = document.getElementById('addCommBody');
     const dst = document.getElementById('editCommBody');
     dst.innerHTML = src.innerHTML;
 
+    // Remove summary banner from edit modal
+    const sumBanner = dst.querySelector('#addCommSummary');
+    if (sumBanner) sumBanner.remove();
+
+    // Fix IDs
+    const agSel  = dst.querySelector('[name="agent_id"]');
+    const prSel  = dst.querySelector('[name="project_id"]');
+    const paySel = dst.querySelector('[name="payment_status"]');
+    const srcSel = dst.querySelector('[name="payment_source"]');
+    if (agSel)  agSel.id  = 'editAgentSel';
+    if (prSel)  prSel.id  = 'editProjectSel';
+    if (paySel) { paySel.id = 'editPaymentStatus'; paySel.removeAttribute('onchange'); }
+    if (srcSel) { srcSel.id = 'editSourceSel'; srcSel.setAttribute('onchange', "toggleRefField(this,'edit')"); }
+    const refRow = dst.querySelector('#addRefRow'); if (refRow) refRow.id = 'editRefRow';
+
     const fields = {
-        agent_id: data.agent_id, client_name: data.client_name,
-        project: data.project, plot_number: data.plot_number,
-        total_commission: data.total_commission, paid_amount: data.paid_amount,
-        maturity_status: data.maturity_status, payment_status: data.payment_status,
+        agent_id: data.agent_id,
+        project_id: data.project_id || '',
+        client_name: data.client_name || '',
+        plot_number: data.plot_number || '',
+        total_commission: data.total_commission,
+        paid_amount: data.paid_amount,
+        sale_date: data.sale_date ? data.sale_date.substring(0,10) : '',
+        due_date:  data.due_date  ? data.due_date.substring(0,10)  : '',
+        maturity_status: data.maturity_status,
+        payment_status: data.payment_status,
+        payment_source: data.payment_source || '',
+        reference_no: data.reference_no || '',
         pending_reason_id: data.pending_reason_id || '',
-        sale_month: data.sale_month || '', sale_year: data.sale_year || '',
-        pending_notes: data.pending_notes || '', notes: data.notes || ''
+        pending_notes: data.pending_notes || '',
+        notes: data.notes || ''
     };
     for (const [key, val] of Object.entries(fields)) {
         const el = dst.querySelector('[name="' + key + '"]');
@@ -339,13 +464,15 @@ function editComm(data) {
             for (const opt of el.options) opt.selected = (String(opt.value) === String(val));
         } else { el.value = val ?? ''; }
     }
+    // Toggle ref field visibility
+    if (srcSel) toggleRefField(srcSel, 'edit');
     openModal('editCommModal');
 }
 </script>
 
 <style>
 @media print {
-    .filter-bar, form[method="GET"], .modal-overlay { display: none !important; }
+    .filter-bar, form[method="GET"], .modal-overlay, .page-header-actions { display: none !important; }
     .data-table td:last-child, .data-table th:last-child { display: none !important; }
     body::before {
         content: "HK Builders & Developers  -  Commission Report  -  <?= date('d M Y') ?>";

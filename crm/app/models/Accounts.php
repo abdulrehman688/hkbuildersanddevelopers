@@ -13,7 +13,7 @@ class Accounts {
 
     public function getCommissionStats(): array {
         try {
-            return $this->db->query("
+            $stats = $this->db->query("
                 SELECT
                     COUNT(*) AS total_entries,
                     COALESCE(SUM(total_commission), 0)               AS total_commission,
@@ -25,6 +25,18 @@ class Accounts {
                     SUM(CASE WHEN payment_status='pending' THEN 1 ELSE 0 END) AS pending_count
                 FROM commission_payments
             ")->fetch(PDO::FETCH_ASSOC) ?: [];
+
+            $recent = $this->db->query("
+                SELECT cp.paid_amount, cp.client_name, cp.created_at, u.name AS agent_name
+                FROM commission_payments cp
+                LEFT JOIN users u ON u.id = cp.agent_id
+                WHERE cp.payment_status = 'paid'
+                ORDER BY cp.created_at DESC LIMIT 1
+            ")->fetch(PDO::FETCH_ASSOC);
+            $stats['recently_paid_amount'] = $recent['paid_amount']  ?? 0;
+            $stats['recently_paid_agent']  = $recent['agent_name']   ?? '';
+            $stats['recently_paid_date']   = $recent['created_at']   ?? null;
+            return $stats;
         } catch (\Throwable $e) {
             error_log('Accounts::getCommissionStats - ' . $e->getMessage());
             return [];
@@ -42,9 +54,13 @@ class Accounts {
             if (!empty($f['sale_year']))       { $where[] = 'cp.sale_year = ?';       $params[] = (int)$f['sale_year']; }
 
             $stmt = $this->db->prepare("
-                SELECT cp.*, u.name AS agent_name, pr.reason AS pending_reason_text
+                SELECT cp.*,
+                    u.name  AS agent_name,
+                    bp.name AS project_name,
+                    pr.reason AS pending_reason_text
                 FROM commission_payments cp
                 LEFT JOIN users u  ON u.id  = cp.agent_id
+                LEFT JOIN builder_projects bp ON bp.id = cp.project_id
                 LEFT JOIN commission_pending_reason pr ON pr.id = cp.pending_reason_id
                 WHERE " . implode(' AND ', $where) . "
                 ORDER BY cp.created_at DESC
@@ -55,6 +71,22 @@ class Accounts {
             error_log('Accounts::getCommissions - ' . $e->getMessage());
             return [];
         }
+    }
+
+    public function getAgentProjectSummary(int $agentId, int $projectId): array {
+        try {
+            $stmt = $this->db->prepare("
+                SELECT
+                    COUNT(*) AS records,
+                    COALESCE(SUM(total_commission), 0) AS total_commission,
+                    COALESCE(SUM(paid_amount), 0)      AS paid_amount,
+                    COALESCE(SUM(total_commission - paid_amount), 0) AS remaining
+                FROM commission_payments
+                WHERE agent_id = ? AND project_id = ?
+            ");
+            $stmt->execute([$agentId, $projectId]);
+            return $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
+        } catch (\Throwable $e) { return []; }
     }
 
     public function findCommissionById(int $id): array|false {
@@ -70,16 +102,19 @@ class Accounts {
     public function addCommission(array $d): int {
         $this->db->prepare("
             INSERT INTO commission_payments
-                (agent_id, lead_id, client_name, project, plot_number, total_commission,
-                 maturity_status, payment_status, paid_amount, pending_reason_id,
-                 pending_notes, sale_month, sale_year, notes, created_by)
-            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+                (agent_id, lead_id, project_id, client_name, project, plot_number,
+                 total_commission, maturity_status, payment_status, paid_amount,
+                 payment_source, reference_no, pending_reason_id, pending_notes,
+                 sale_month, sale_year, sale_date, due_date, notes, created_by)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
         ")->execute([
-            $d['agent_id'], $d['lead_id'] ?: null, $d['client_name'] ?: null,
-            $d['project'] ?: null, $d['plot_number'] ?: null, $d['total_commission'],
-            $d['maturity_status'], $d['payment_status'], $d['paid_amount'],
+            $d['agent_id'], $d['lead_id'] ?: null, $d['project_id'] ?: null,
+            $d['client_name'] ?: null, $d['project'] ?: null, $d['plot_number'] ?: null,
+            $d['total_commission'], $d['maturity_status'], $d['payment_status'],
+            $d['paid_amount'], $d['payment_source'] ?: null, $d['reference_no'] ?: null,
             $d['pending_reason_id'] ?: null, $d['pending_notes'] ?: null,
             $d['sale_month'] ?: null, $d['sale_year'] ?: null,
+            $d['sale_date'] ?: null, $d['due_date'] ?: null,
             $d['notes'] ?: null, $d['created_by'],
         ]);
         return (int)$this->db->lastInsertId();
@@ -88,16 +123,20 @@ class Accounts {
     public function updateCommission(int $id, array $d): void {
         $this->db->prepare("
             UPDATE commission_payments SET
-                agent_id=?, lead_id=?, client_name=?, project=?, plot_number=?,
+                agent_id=?, lead_id=?, project_id=?, client_name=?, project=?, plot_number=?,
                 total_commission=?, maturity_status=?, payment_status=?, paid_amount=?,
-                pending_reason_id=?, pending_notes=?, sale_month=?, sale_year=?, notes=?
+                payment_source=?, reference_no=?, pending_reason_id=?, pending_notes=?,
+                sale_month=?, sale_year=?, sale_date=?, due_date=?, notes=?
             WHERE id=?
         ")->execute([
-            $d['agent_id'], $d['lead_id'] ?: null, $d['client_name'] ?: null,
-            $d['project'] ?: null, $d['plot_number'] ?: null, $d['total_commission'],
-            $d['maturity_status'], $d['payment_status'], $d['paid_amount'],
+            $d['agent_id'], $d['lead_id'] ?: null, $d['project_id'] ?: null,
+            $d['client_name'] ?: null, $d['project'] ?: null, $d['plot_number'] ?: null,
+            $d['total_commission'], $d['maturity_status'], $d['payment_status'],
+            $d['paid_amount'], $d['payment_source'] ?: null, $d['reference_no'] ?: null,
             $d['pending_reason_id'] ?: null, $d['pending_notes'] ?: null,
-            $d['sale_month'] ?: null, $d['sale_year'] ?: null, $d['notes'] ?: null, $id,
+            $d['sale_month'] ?: null, $d['sale_year'] ?: null,
+            $d['sale_date'] ?: null, $d['due_date'] ?: null,
+            $d['notes'] ?: null, $id,
         ]);
     }
 
@@ -207,5 +246,16 @@ class Accounts {
         } catch (\Throwable $e) {
             return [];
         }
+    }
+
+    public function getAllProjects(): array {
+        try {
+            return $this->db->query("
+                SELECT bp.id, bp.name, bp.builder_id, b.name AS builder_name
+                FROM builder_projects bp
+                LEFT JOIN builders b ON b.id = bp.builder_id
+                ORDER BY b.name, bp.name
+            ")->fetchAll(PDO::FETCH_ASSOC);
+        } catch (\Throwable $e) { return []; }
     }
 }
