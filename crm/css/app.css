@@ -1267,6 +1267,7 @@ input, select, textarea { font-family: 'Jost', sans-serif; max-width: 100%; }
 .modal-close:hover { background: var(--bg); color: var(--text); }
 .modal-close svg { width: 16px; height: 16px; }
 
+.modal > form { display: flex; flex-direction: column; flex: 1; min-height: 0; overflow: hidden; }
 .modal-body { padding: 22px 24px; display: flex; flex-direction: column; gap: 16px; overflow-y: auto; flex: 1; min-height: 0; }
 .modal-body .form-group { margin-bottom: 0; }
 
