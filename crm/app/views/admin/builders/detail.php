@@ -43,7 +43,7 @@ ob_start();
 
 <!-- Builder info card -->
 <div class="card" style="margin-bottom:16px;padding:20px 22px">
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:20px">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:20px;overflow-wrap:anywhere">
         <div>
             <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Contact Person</div>
             <div style="font-weight:600"><?= Security::e($builderRow['contact_person'] ?? '-') ?></div>
@@ -80,7 +80,7 @@ ob_start();
 </div>
 
 <!-- Commission summary -->
-<div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:28px">
+<div class="chip-row" style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:28px">
     <?php foreach ([
         ['Total Commission', $totalCommission, 'var(--gold)'],
         ['Total Paid',       $totalPaid,       '#16a34a'],
@@ -103,20 +103,20 @@ ob_start();
 <div style="padding:32px;text-align:center;color:var(--text-muted)">No projects yet.</div>
 <?php else: ?>
 <div style="overflow-x:auto">
-<table class="data-table" style="min-width:760px">
+<table class="data-table table-cards" style="min-width:760px">
     <thead>
         <tr><th>Project</th><th>Location</th><th>Units</th><th>Commission</th><th>Paid</th><th>Unpaid</th><th>Status</th></tr>
     </thead>
     <tbody>
     <?php foreach ($projects as $p): $pUnpaid = max(0, (float)$p['total_commission'] - (float)$p['paid_amount']); ?>
     <tr>
-        <td style="font-weight:600"><?= Security::e($p['name']) ?></td>
-        <td style="color:var(--text-muted)"><?= Security::e($p['location'] ?? '-') ?></td>
-        <td style="font-weight:600;color:#8b5cf6"><?= (int)$p['unit_count'] ?></td>
-        <td style="font-weight:600;color:var(--gold);white-space:nowrap"><?= $pkr($p['total_commission']) ?></td>
-        <td style="font-weight:600;color:#16a34a;white-space:nowrap"><?= $pkr($p['paid_amount']) ?></td>
-        <td style="font-weight:600;white-space:nowrap;color:<?= $pUnpaid > 0 ? '#dc2626' : 'var(--text-muted)' ?>"><?= $pkr($pUnpaid) ?></td>
-        <td>
+        <td class="tc-title" style="font-weight:600"><?= Security::e($p['name']) ?></td>
+        <td data-label="Location" style="color:var(--text-muted)"><?= Security::e($p['location'] ?? '-') ?></td>
+        <td data-label="Units" style="font-weight:600;color:#8b5cf6"><?= (int)$p['unit_count'] ?></td>
+        <td data-label="Commission" style="font-weight:600;color:var(--gold);white-space:nowrap"><?= $pkr($p['total_commission']) ?></td>
+        <td data-label="Paid" style="font-weight:600;color:#16a34a;white-space:nowrap"><?= $pkr($p['paid_amount']) ?></td>
+        <td data-label="Unpaid" style="font-weight:600;white-space:nowrap;color:<?= $pUnpaid > 0 ? '#dc2626' : 'var(--text-muted)' ?>"><?= $pkr($pUnpaid) ?></td>
+        <td data-label="Status">
             <span style="padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;
                 background:<?= $p['status']==='active' ? 'rgba(34,197,94,.12)' : ($p['status']==='completed' ? 'rgba(59,130,246,.12)' : 'rgba(245,158,11,.12)') ?>;
                 color:<?= $p['status']==='active' ? '#16a34a' : ($p['status']==='completed' ? '#2563eb' : '#d97706') ?>">
@@ -141,27 +141,27 @@ ob_start();
 <div style="padding:32px;text-align:center;color:var(--text-muted)">No units recorded.</div>
 <?php else: ?>
 <div style="overflow-x:auto">
-<table class="data-table" style="min-width:860px">
+<table class="data-table table-cards" style="min-width:860px">
     <thead>
         <tr><th>Project</th><th>Unit No.</th><th>Block</th><th>Category / Size</th><th>Commission</th><th>Paid</th><th>Balance</th><th>Maturity</th><th>Status</th></tr>
     </thead>
     <tbody>
     <?php foreach ($units as $u): [$sBg, $sClr] = $payColors[$u['pay_status']]; $isMature = $u['maturity_status'] === 'mature'; ?>
     <tr>
-        <td style="color:var(--text-muted);font-size:13px"><?= Security::e($u['project_name']) ?></td>
-        <td style="font-weight:600"><?= Security::e($u['unit_number']) ?></td>
-        <td style="color:var(--text-muted)"><?= Security::e($u['block_number'] ?: '-') ?></td>
-        <td style="font-size:12px;color:var(--text-muted)"><?= Security::e(implode(' / ', array_filter([$u['category'], $u['plot_size']])) ?: '-') ?></td>
-        <td style="font-weight:600;color:var(--gold);white-space:nowrap"><?= $pkr($u['commission_amount']) ?></td>
-        <td style="color:#16a34a;white-space:nowrap"><?= $pkr($u['paid_amount']) ?></td>
-        <td style="font-weight:600;white-space:nowrap;color:<?= $u['balance'] > 0 ? '#dc2626' : 'var(--text-muted)' ?>"><?= $pkr($u['balance']) ?></td>
-        <td>
+        <td class="tc-sub" style="color:var(--text-muted);font-size:13px"><?= Security::e($u['project_name']) ?></td>
+        <td class="tc-title" style="font-weight:600"><?= Security::e($u['unit_number']) ?></td>
+        <td data-label="Block" style="color:var(--text-muted)"><?= Security::e($u['block_number'] ?: '-') ?></td>
+        <td data-label="Category / Size" style="font-size:12px;color:var(--text-muted)"><?= Security::e(implode(' / ', array_filter([$u['category'], $u['plot_size']])) ?: '-') ?></td>
+        <td data-label="Commission" style="font-weight:600;color:var(--gold);white-space:nowrap"><?= $pkr($u['commission_amount']) ?></td>
+        <td data-label="Paid" style="color:#16a34a;white-space:nowrap"><?= $pkr($u['paid_amount']) ?></td>
+        <td data-label="Balance" style="font-weight:600;white-space:nowrap;color:<?= $u['balance'] > 0 ? '#dc2626' : 'var(--text-muted)' ?>"><?= $pkr($u['balance']) ?></td>
+        <td data-label="Maturity">
             <span style="padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;
                 background:<?= $isMature ? 'rgba(34,197,94,.12)' : 'rgba(245,158,11,.14)' ?>;color:<?= $isMature ? '#16a34a' : '#b45309' ?>">
                 <?= $isMature ? 'Mature' : 'Immature' ?>
             </span>
         </td>
-        <td>
+        <td data-label="Status">
             <span style="padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;background:<?= $sBg ?>;color:<?= $sClr ?>">
                 <?= $payLabels[$u['pay_status']] ?>
             </span>
@@ -184,30 +184,30 @@ ob_start();
 <div style="padding:32px;text-align:center;color:var(--text-muted)">No payments recorded.</div>
 <?php else: ?>
 <div style="overflow-x:auto">
-<table class="data-table" style="min-width:700px">
+<table class="data-table table-cards" style="min-width:700px">
     <thead>
         <tr><th>Date</th><th>Project</th><th>Unit</th><th>Amount</th><th>Type</th><th>Reference</th><th>Notes</th></tr>
     </thead>
     <tbody>
     <?php foreach ($payments as $p): ?>
     <tr>
-        <td style="font-size:12px;color:var(--text-muted);white-space:nowrap"><?= date('d M Y', strtotime($p['payment_date'])) ?></td>
-        <td style="color:var(--text-muted)"><?= Security::e($p['project_name'] ?? '-') ?></td>
-        <td style="font-size:13px">
+        <td data-label="Date" style="font-size:12px;color:var(--text-muted);white-space:nowrap"><?= date('d M Y', strtotime($p['payment_date'])) ?></td>
+        <td data-label="Project" style="color:var(--text-muted)"><?= Security::e($p['project_name'] ?? '-') ?></td>
+        <td data-label="Unit" style="font-size:13px">
             <?php if ($p['unit_number'] !== null): ?>
                 <?= Security::e($p['unit_number'] . ($p['block_number'] ? ' (Block ' . $p['block_number'] . ')' : '')) ?>
             <?php else: ?>
                 <span style="font-size:11px;color:#b45309">Not assigned</span>
             <?php endif; ?>
         </td>
-        <td style="font-weight:700;color:var(--gold)"><?= $pkr($p['amount']) ?></td>
-        <td>
+        <td class="tc-title" style="font-weight:700;color:var(--gold)"><?= $pkr($p['amount']) ?></td>
+        <td data-label="Type">
             <span style="padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;background:rgba(99,102,241,.1);color:#6366f1">
                 <?= $typeLabels[$p['payment_type']] ?? ucfirst($p['payment_type']) ?>
             </span>
         </td>
-        <td style="font-size:12px;color:var(--text-muted)"><?= Security::e($p['reference'] ?? '-') ?></td>
-        <td style="font-size:12px;color:var(--text-muted);max-width:200px"><?= Security::e($p['notes'] ?? '-') ?></td>
+        <td data-label="Reference" style="font-size:12px;color:var(--text-muted)"><?= Security::e($p['reference'] ?? '-') ?></td>
+        <td class="tc-full" data-label="Notes" style="font-size:12px;color:var(--text-muted);max-width:200px"><?= Security::e($p['notes'] ?? '-') ?></td>
     </tr>
     <?php endforeach; ?>
     </tbody>

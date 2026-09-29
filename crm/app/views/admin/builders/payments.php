@@ -40,7 +40,7 @@ ob_start();
 </div>
 
 <!-- Sub-nav -->
-<div style="display:flex;gap:4px;margin-bottom:28px;border-bottom:2px solid var(--border)">
+<div class="sub-nav" style="display:flex;gap:4px;margin-bottom:28px;border-bottom:2px solid var(--border)">
     <?php foreach ([
         [APP_URL.'/admin/builders',          'Builders', false],
         [APP_URL.'/admin/builders/projects', 'Projects', false],
@@ -57,14 +57,14 @@ ob_start();
 </div>
 
 <!-- Stat chip -->
-<div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:20px">
+<div class="chip-row" style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:20px">
     <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:8px 16px">
         <span style="font-size:16px;font-weight:700;color:var(--gold)"><?= $pkr($totalPaid) ?></span>
-        <span style="font-size:12px;color:var(--text-muted);margin-left:6px">Total Shown</span>
+        <span style="font-size:12px;color:var(--text-muted);margin-left:6px;white-space:nowrap">Total Shown</span>
     </div>
     <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:8px 16px">
         <span style="font-size:16px;font-weight:700;color:#6b7280"><?= count($payments) ?></span>
-        <span style="font-size:12px;color:var(--text-muted);margin-left:6px">Records</span>
+        <span style="font-size:12px;color:var(--text-muted);margin-left:6px;white-space:nowrap">Records</span>
     </div>
 </div>
 
@@ -103,7 +103,7 @@ ob_start();
 <div style="padding:48px;text-align:center;color:var(--text-muted)">No payments found.</div>
 <?php else: ?>
 <div style="overflow-x:auto">
-<table class="data-table" style="min-width:900px">
+<table class="data-table table-cards" style="min-width:900px">
     <thead>
         <tr>
             <th>Builder</th>
@@ -120,9 +120,9 @@ ob_start();
     <tbody>
     <?php foreach ($payments as $p): ?>
     <tr>
-        <td style="font-weight:600"><?= Security::e($p['builder_name']) ?></td>
-        <td style="color:var(--text-muted);font-size:13px"><?= Security::e($p['project_name'] ?? '-') ?></td>
-        <td style="font-size:13px">
+        <td class="tc-sub" style="font-weight:600"><?= Security::e($p['builder_name']) ?></td>
+        <td data-label="Project" style="color:var(--text-muted);font-size:13px"><?= Security::e($p['project_name'] ?? '-') ?></td>
+        <td data-label="Unit" style="font-size:13px">
             <?php if ($p['unit_number'] !== null): ?>
                 <span style="font-weight:600"><?= Security::e($p['unit_number']) ?></span>
                 <?php if ($p['block_number']): ?><div style="font-size:11px;color:var(--text-muted)">Block <?= Security::e($p['block_number']) ?></div><?php endif; ?>
@@ -130,17 +130,17 @@ ob_start();
                 <span style="font-size:11px;color:#b45309">Not assigned</span>
             <?php endif; ?>
         </td>
-        <td style="font-weight:600;color:var(--gold)"><?= $pkr($p['amount']) ?></td>
-        <td>
+        <td class="tc-title" style="font-weight:600;color:var(--gold)"><?= $pkr($p['amount']) ?></td>
+        <td data-label="Type">
             <span style="padding:3px 10px;border-radius:12px;font-size:11px;font-weight:600;
                 background:rgba(99,102,241,.1);color:<?= $typeColors[$p['payment_type']] ?? '#6b7280' ?>">
                 <?= $typeLabels[$p['payment_type']] ?? ucfirst($p['payment_type']) ?>
             </span>
         </td>
-        <td style="font-size:12px;color:var(--text-muted)"><?= date('d M Y', strtotime($p['payment_date'])) ?></td>
-        <td style="font-size:12px;color:var(--text-muted)"><?= Security::e($p['reference'] ?? '-') ?></td>
-        <td style="font-size:12px;color:var(--text-muted)"><?= Security::e($p['created_by_name'] ?? '-') ?></td>
-        <td>
+        <td data-label="Date" style="font-size:12px;color:var(--text-muted)"><?= date('d M Y', strtotime($p['payment_date'])) ?></td>
+        <td data-label="Reference" style="font-size:12px;color:var(--text-muted)"><?= Security::e($p['reference'] ?? '-') ?></td>
+        <td data-label="Added By" style="font-size:12px;color:var(--text-muted)"><?= Security::e($p['created_by_name'] ?? '-') ?></td>
+        <td class="tc-actions">
             <div style="display:flex;gap:6px">
                 <button class="btn btn-sm" onclick='editPay(<?= $js($p) ?>)'>Edit</button>
                 <form method="POST" action="<?= APP_URL ?>/admin/builders/payments" style="margin:0">

@@ -53,6 +53,13 @@ tr:nth-child(even) td{background:#fafafa}
     .no-print{display:none!important}
     @page{margin:12mm}
 }
+@media screen and (max-width:640px){
+    body{padding:14px}
+    .header{flex-direction:column;gap:10px}
+    .company{text-align:left}
+    .stat{flex:1 1 140px;min-width:0}
+    table{display:block;overflow-x:auto;white-space:nowrap}
+}
 </style>
 </head>
 <body>

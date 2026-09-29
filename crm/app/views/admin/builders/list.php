@@ -34,7 +34,7 @@ ob_start();
 </div>
 
 <!-- Sub-nav -->
-<div style="display:flex;gap:4px;margin-bottom:28px;border-bottom:2px solid var(--border)">
+<div class="sub-nav" style="display:flex;gap:4px;margin-bottom:28px;border-bottom:2px solid var(--border)">
     <?php foreach ([
         [APP_URL.'/admin/builders',          'Builders', true],
         [APP_URL.'/admin/builders/projects', 'Projects', false],
@@ -51,7 +51,7 @@ ob_start();
 </div>
 
 <!-- Stats -->
-<div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:24px">
+<div class="chip-row" style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:24px">
     <?php foreach ([
         ['Active Builders',  (int)($stats['builders'] ?? 0),       '#6366f1'],
         ['Total Projects',   (int)($stats['projects'] ?? 0),       '#3b82f6'],
@@ -73,7 +73,7 @@ ob_start();
 <div style="padding:48px;text-align:center;color:var(--text-muted)">No builders found. Add your first builder.</div>
 <?php else: ?>
 <div style="overflow-x:auto">
-<table class="data-table" style="min-width:900px">
+<table class="data-table table-cards" style="min-width:900px">
     <thead>
         <tr>
             <th>Builder</th>
@@ -90,26 +90,26 @@ ob_start();
     <tbody>
     <?php foreach ($builders as $b): $unpaid = max(0, (float)$b['total_commission'] - (float)$b['total_paid']); ?>
     <tr>
-        <td style="font-weight:600"><?= Security::e($b['name']) ?></td>
-        <td style="color:var(--text-muted);font-size:13px">
+        <td class="tc-title" style="font-weight:600"><?= Security::e($b['name']) ?></td>
+        <td class="tc-full" data-label="Contact" style="color:var(--text-muted);font-size:13px">
             <?= Security::e($b['contact_person'] ?: '-') ?>
             <?php if ($b['phone']): ?><div style="font-size:12px"><?= Security::e($b['phone']) ?></div><?php endif; ?>
         </td>
-        <td style="font-weight:600;color:#6366f1"><?= (int)$b['project_count'] ?></td>
-        <td style="font-weight:600;color:#8b5cf6"><?= (int)$b['unit_count'] ?></td>
-        <td style="font-weight:600;color:var(--gold);white-space:nowrap"><?= $pkr($b['total_commission']) ?></td>
-        <td style="font-weight:600;color:#16a34a;white-space:nowrap"><?= $pkr($b['total_paid']) ?></td>
-        <td style="font-weight:600;white-space:nowrap;color:<?= $unpaid > 0 ? '#dc2626' : 'var(--text-muted)' ?>"><?= $pkr($unpaid) ?></td>
-        <td>
+        <td data-label="Projects" style="font-weight:600;color:#6366f1"><?= (int)$b['project_count'] ?></td>
+        <td data-label="Units" style="font-weight:600;color:#8b5cf6"><?= (int)$b['unit_count'] ?></td>
+        <td data-label="Commission" style="font-weight:600;color:var(--gold);white-space:nowrap"><?= $pkr($b['total_commission']) ?></td>
+        <td data-label="Paid" style="font-weight:600;color:#16a34a;white-space:nowrap"><?= $pkr($b['total_paid']) ?></td>
+        <td data-label="Unpaid" style="font-weight:600;white-space:nowrap;color:<?= $unpaid > 0 ? '#dc2626' : 'var(--text-muted)' ?>"><?= $pkr($unpaid) ?></td>
+        <td data-label="Status">
             <span style="padding:3px 10px;border-radius:12px;font-size:11px;font-weight:600;
                 background:<?= $b['status']==='active' ? 'rgba(34,197,94,.12)' : 'rgba(156,163,175,.15)' ?>;
                 color:<?= $b['status']==='active' ? '#16a34a' : '#6b7280' ?>">
                 <?= ucfirst($b['status']) ?>
             </span>
         </td>
-        <td>
+        <td class="tc-actions">
             <div style="display:flex;gap:6px">
-                <a href="<?= APP_URL ?>/admin/builders/detail/<?= $b['id'] ?>" class="btn btn-sm">View</a>
+                <a href="<?= APP_URL ?>/admin/builders/detail/<?= $b['id'] ?>" class="btn btn-secondary btn-sm">View</a>
                 <button class="btn btn-sm" onclick='editBuilder(<?= $js($b) ?>)'>Edit</button>
                 <form method="POST" action="<?= APP_URL ?>/admin/builders" style="margin:0">
                     <?= Security::csrfField() ?>

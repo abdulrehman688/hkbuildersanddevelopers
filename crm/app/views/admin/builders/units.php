@@ -59,7 +59,7 @@ ob_start();
 </div>
 
 <!-- Sub-nav -->
-<div style="display:flex;gap:4px;margin-bottom:28px;border-bottom:2px solid var(--border)">
+<div class="sub-nav" style="display:flex;gap:4px;margin-bottom:28px;border-bottom:2px solid var(--border)">
     <?php foreach ([
         [APP_URL.'/admin/builders',          'Builders', false],
         [APP_URL.'/admin/builders/projects', 'Projects', false],
@@ -92,7 +92,7 @@ ob_start();
 </div>
 
 <!-- Money: commission from units, paid from Payments -->
-<div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:20px">
+<div class="chip-row" style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:20px">
     <?php foreach ([
         ['Total Commission', $unitStats['total_commission'] ?? 0, 'var(--gold)'],
         ['Paid',             $unitStats['total_paid']       ?? 0, '#16a34a'],
@@ -155,7 +155,7 @@ ob_start();
 <div style="padding:48px;text-align:center;color:var(--text-muted)"><?= $filtered ? 'No units match these filters.' : 'No units yet. Add the first unit sold.' ?></div>
 <?php else: ?>
 <div style="overflow-x:auto">
-<table class="data-table units-table" style="min-width:1180px">
+<table class="data-table units-table table-cards" style="min-width:1180px">
     <thead>
         <tr>
             <th>Builder / Project</th>
@@ -193,22 +193,22 @@ ob_start();
                    . ($payCount ? ' Its payments stay in Payments but will no longer be linked to a unit.' : '');
     ?>
     <tr>
-        <td>
+        <td class="tc-sub">
             <div style="font-weight:600;font-size:13px"><?= Security::e($u['builder_name']) ?></div>
             <div style="font-size:11px;color:var(--text-muted)"><?= Security::e($u['project_name']) ?></div>
         </td>
-        <td style="font-weight:600"><?= Security::e($u['unit_number']) ?></td>
-        <td style="color:var(--text-muted)"><?= Security::e($u['block_number'] ?: '-') ?></td>
-        <td style="font-size:12px;color:var(--text-muted)">
+        <td class="tc-title" style="font-weight:600"><?= Security::e($u['unit_number']) ?></td>
+        <td data-label="Block" style="color:var(--text-muted)"><?= Security::e($u['block_number'] ?: '-') ?></td>
+        <td data-label="Category / Size" style="font-size:12px;color:var(--text-muted)">
             <?= Security::e($u['category'] ?: '-') ?>
             <?php if ($u['plot_size']): ?><div><?= Security::e($u['plot_size']) ?></div><?php endif; ?>
         </td>
-        <td><?= $pkr($u['total_cost']) ?></td>
-        <td><?= $pkr($u['down_payment']) ?></td>
-        <td style="font-weight:600;color:var(--gold)"><?= $pkr($u['commission_amount']) ?></td>
-        <td style="color:#16a34a"><?= $pkr($u['paid_amount']) ?></td>
-        <td style="font-weight:600;color:<?= $u['balance'] > 0 ? '#dc2626' : 'var(--text-muted)' ?>"><?= $pkr($u['balance']) ?></td>
-        <td>
+        <td data-label="Total Cost"><?= $pkr($u['total_cost']) ?></td>
+        <td data-label="Down Payment"><?= $pkr($u['down_payment']) ?></td>
+        <td data-label="Commission" style="font-weight:600;color:var(--gold)"><?= $pkr($u['commission_amount']) ?></td>
+        <td data-label="Paid" style="color:#16a34a"><?= $pkr($u['paid_amount']) ?></td>
+        <td data-label="Balance" style="font-weight:600;color:<?= $u['balance'] > 0 ? '#dc2626' : 'var(--text-muted)' ?>"><?= $pkr($u['balance']) ?></td>
+        <td data-label="Maturity">
             <form method="POST" action="<?= $formAction ?>" style="margin:0">
                 <?= Security::csrfField() ?>
                 <input type="hidden" name="form_action" value="maturity">
@@ -220,12 +220,12 @@ ob_start();
                 </button>
             </form>
         </td>
-        <td>
+        <td data-label="Status">
             <span style="padding:3px 10px;border-radius:12px;font-size:11px;font-weight:600;background:<?= $sBg ?>;color:<?= $sClr ?>">
                 <?= $payLabels[$u['pay_status']] ?>
             </span>
         </td>
-        <td>
+        <td class="tc-actions">
             <div style="display:flex;gap:6px">
                 <?php if ($u['balance'] > 0): ?>
                 <button type="button" class="btn btn-sm" style="color:#16a34a" onclick='openPayModal(<?= $js($payData) ?>)'>Mark Paid</button>
@@ -251,12 +251,12 @@ ob_start();
     </tbody>
     <tfoot>
         <tr style="background:var(--bg);font-weight:700;border-top:2px solid var(--border)">
-            <td colspan="4">Total &middot; <?= count($units) ?> unit<?= count($units) === 1 ? '' : 's' ?></td>
-            <td><?= $pkr(array_sum(array_column($units, 'total_cost'))) ?></td>
-            <td><?= $pkr(array_sum(array_column($units, 'down_payment'))) ?></td>
-            <td style="color:var(--gold)"><?= $pkr(array_sum(array_column($units, 'commission_amount'))) ?></td>
-            <td style="color:#16a34a"><?= $pkr(array_sum(array_column($units, 'paid_amount'))) ?></td>
-            <td style="color:#dc2626"><?= $pkr(array_sum(array_column($units, 'balance'))) ?></td>
+            <td colspan="4" class="tc-title">Total &middot; <?= count($units) ?> unit<?= count($units) === 1 ? '' : 's' ?></td>
+            <td data-label="Total Cost"><?= $pkr(array_sum(array_column($units, 'total_cost'))) ?></td>
+            <td data-label="Down Payment"><?= $pkr(array_sum(array_column($units, 'down_payment'))) ?></td>
+            <td data-label="Commission" style="color:var(--gold)"><?= $pkr(array_sum(array_column($units, 'commission_amount'))) ?></td>
+            <td data-label="Paid" style="color:#16a34a"><?= $pkr(array_sum(array_column($units, 'paid_amount'))) ?></td>
+            <td data-label="Balance" style="color:#dc2626"><?= $pkr(array_sum(array_column($units, 'balance'))) ?></td>
             <td colspan="2"></td>
             <td></td>
         </tr>

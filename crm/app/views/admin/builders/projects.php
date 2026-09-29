@@ -37,7 +37,7 @@ ob_start();
 </div>
 
 <!-- Sub-nav -->
-<div style="display:flex;gap:4px;margin-bottom:28px;border-bottom:2px solid var(--border)">
+<div class="sub-nav" style="display:flex;gap:4px;margin-bottom:28px;border-bottom:2px solid var(--border)">
     <?php foreach ([
         [APP_URL.'/admin/builders',          'Builders', false],
         [APP_URL.'/admin/builders/projects', 'Projects', true],
@@ -81,7 +81,7 @@ ob_start();
 <div style="padding:48px;text-align:center;color:var(--text-muted)">No projects found.</div>
 <?php else: ?>
 <div style="overflow-x:auto">
-<table class="data-table" style="min-width:1050px">
+<table class="data-table table-cards" style="min-width:1050px">
     <thead>
         <tr>
             <th>Builder</th>
@@ -104,24 +104,24 @@ ob_start();
         $unpaid = max(0, (float)$p['total_commission'] - (float)$p['paid_amount']);
     ?>
     <tr>
-        <td style="color:var(--text-muted);font-size:13px"><?= Security::e($p['builder_name']) ?></td>
-        <td style="font-weight:600"><?= Security::e($p['name']) ?></td>
-        <td style="color:var(--text-muted)"><?= Security::e($p['location'] ?? '-') ?></td>
-        <td style="color:#6366f1;font-weight:600"><?= (int)$p['total_plots'] ?: '-' ?></td>
-        <td>
+        <td class="tc-sub" style="color:var(--text-muted);font-size:13px"><?= Security::e($p['builder_name']) ?></td>
+        <td class="tc-title" style="font-weight:600"><?= Security::e($p['name']) ?></td>
+        <td data-label="Location" style="color:var(--text-muted)"><?= Security::e($p['location'] ?? '-') ?></td>
+        <td data-label="Plots" style="color:#6366f1;font-weight:600"><?= (int)$p['total_plots'] ?: '-' ?></td>
+        <td data-label="Units">
             <a href="<?= APP_URL ?>/admin/builders/units?builder_id=<?= (int)$p['builder_id'] ?>&amp;project_id=<?= (int)$p['id'] ?>"
                style="font-weight:600;color:#8b5cf6;text-decoration:none" title="View units"><?= (int)$p['unit_count'] ?></a>
         </td>
-        <td style="font-weight:600;white-space:nowrap"><?= $p['total_value'] > 0 ? $pkr($p['total_value']) : '-' ?></td>
-        <td style="font-weight:600;color:var(--gold);white-space:nowrap"><?= $pkr($p['total_commission']) ?></td>
-        <td style="font-weight:600;color:#16a34a;white-space:nowrap"><?= $pkr($p['paid_amount']) ?></td>
-        <td style="font-weight:600;white-space:nowrap;color:<?= $unpaid > 0 ? '#dc2626' : 'var(--text-muted)' ?>"><?= $pkr($unpaid) ?></td>
-        <td>
+        <td data-label="Total Value" style="font-weight:600;white-space:nowrap"><?= $p['total_value'] > 0 ? $pkr($p['total_value']) : '-' ?></td>
+        <td data-label="Commission" style="font-weight:600;color:var(--gold);white-space:nowrap"><?= $pkr($p['total_commission']) ?></td>
+        <td data-label="Paid" style="font-weight:600;color:#16a34a;white-space:nowrap"><?= $pkr($p['paid_amount']) ?></td>
+        <td data-label="Unpaid" style="font-weight:600;white-space:nowrap;color:<?= $unpaid > 0 ? '#dc2626' : 'var(--text-muted)' ?>"><?= $pkr($unpaid) ?></td>
+        <td data-label="Status">
             <span style="padding:3px 10px;border-radius:12px;font-size:11px;font-weight:600;background:<?= $bg ?>;color:<?= $clr ?>">
                 <?= $statusLabels[$p['status']] ?? ucfirst($p['status']) ?>
             </span>
         </td>
-        <td>
+        <td class="tc-actions">
             <div style="display:flex;gap:6px">
                 <button class="btn btn-sm" onclick='editProject(<?= $js($p) ?>)'>Edit</button>
                 <form method="POST" action="<?= APP_URL ?>/admin/builders/projects" style="margin:0">
@@ -129,7 +129,7 @@ ob_start();
                     <input type="hidden" name="form_action" value="delete">
                     <input type="hidden" name="project_id"  value="<?= (int)$p['id'] ?>">
                     <button type="submit" class="btn btn-sm btn-danger"
-                        onclick="return confirm('Delete this project?')">Delete</button>
+                        onclick='return confirm(<?= $js('Delete project ' . $p['name'] . '? Its ' . (int)$p['unit_count'] . ' unit(s) are deleted too. Its payments stay under the builder.') ?>)'>Delete</button>
                 </form>
             </div>
         </td>
