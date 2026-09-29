@@ -1,3 +1,11 @@
+<?php
+$pkr = fn($v) => 'PKR ' . number_format((float)$v, 0);
+
+$totalCommission = array_sum(array_column($units, 'commission_amount'));
+$totalPaid       = array_sum(array_column($payments, 'amount'));
+$balanceDue      = max(0, $totalCommission - $totalPaid);
+$payLabels       = ['paid' => 'Paid', 'partial' => 'Partial', 'unpaid' => 'Unpaid'];
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -19,6 +27,8 @@ h2{font-size:15px;font-weight:700;margin:24px 0 8px}
 .stat{border:1px solid #e5e7eb;border-radius:6px;padding:10px 16px;min-width:140px}
 .stat .val{font-size:18px;font-weight:700;color:#002147}
 .stat .lbl{font-size:11px;color:#6b7280;margin-top:2px}
+.stat.due{border-color:#fecaca;background:#fef2f2}
+.stat.due .val{color:#b91c1c}
 table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:24px}
 th{background:#002147;color:#fff;padding:7px 10px;text-align:left;font-weight:600}
 td{padding:7px 10px;border-bottom:1px solid #f0f0f0}
@@ -31,6 +41,11 @@ tr:nth-child(even) td{background:#fafafa}
 .badge-active{background:#dcfce7;color:#15803d}
 .badge-completed{background:#dbeafe;color:#1d4ed8}
 .badge-on_hold{background:#fef9c3;color:#a16207}
+.badge-paid{background:#dcfce7;color:#15803d}
+.badge-partial{background:#fef3c7;color:#b45309}
+.badge-unpaid{background:#fee2e2;color:#b91c1c}
+.badge-mature{background:#dcfce7;color:#15803d}
+.badge-immature{background:#fef3c7;color:#b45309}
 .total-row td{font-weight:700;background:#f0f4ff;border-top:2px solid #002147}
 .footer{margin-top:40px;border-top:1px solid #e5e7eb;padding-top:16px;display:flex;justify-content:space-between;font-size:11px;color:#9ca3af}
 @media print{
@@ -75,15 +90,13 @@ tr:nth-child(even) td{background:#fafafa}
     <?php endif; ?>
 </div>
 
-<!-- Summary stats -->
-<?php
-$totalPaid = array_sum(array_column($payments, 'amount'));
-$pkr = fn($v) => 'PKR ' . number_format((float)$v, 0);
-?>
+<!-- Summary -->
 <div class="stat-row">
     <div class="stat"><div class="val"><?= count($projects) ?></div><div class="lbl">Projects</div></div>
-    <div class="stat"><div class="val"><?= count($payments) ?></div><div class="lbl">Total Payments</div></div>
-    <div class="stat"><div class="val"><?= $pkr($totalPaid) ?></div><div class="lbl">Total Paid Out</div></div>
+    <div class="stat"><div class="val"><?= count($units) ?></div><div class="lbl">Units</div></div>
+    <div class="stat"><div class="val"><?= $pkr($totalCommission) ?></div><div class="lbl">Total Commission</div></div>
+    <div class="stat"><div class="val"><?= $pkr($totalPaid) ?></div><div class="lbl">Total Paid</div></div>
+    <div class="stat due"><div class="val"><?= $pkr($balanceDue) ?></div><div class="lbl">Balance Due</div></div>
 </div>
 
 <!-- Projects -->
@@ -97,9 +110,10 @@ $pkr = fn($v) => 'PKR ' . number_format((float)$v, 0);
             <th>#</th>
             <th>Project Name</th>
             <th>Location</th>
-            <th>Plots</th>
-            <th>Total Value</th>
+            <th>Units</th>
+            <th>Commission</th>
             <th>Paid</th>
+            <th>Unpaid</th>
             <th>Status</th>
         </tr>
     </thead>
@@ -109,12 +123,59 @@ $pkr = fn($v) => 'PKR ' . number_format((float)$v, 0);
         <td><?= $pIdx ?></td>
         <td style="font-weight:600"><?= htmlspecialchars($p['name']) ?></td>
         <td><?= htmlspecialchars($p['location'] ?? '-') ?></td>
-        <td><?= (int)$p['total_plots'] ?: '-' ?></td>
-        <td><?= $p['total_value'] > 0 ? $pkr($p['total_value']) : '-' ?></td>
-        <td><?= $pkr($p['paid_amount'] ?? 0) ?></td>
+        <td><?= (int)$p['unit_count'] ?></td>
+        <td><?= $pkr($p['total_commission']) ?></td>
+        <td><?= $pkr($p['paid_amount']) ?></td>
+        <td><?= $pkr(max(0, (float)$p['total_commission'] - (float)$p['paid_amount'])) ?></td>
         <td><span class="badge badge-<?= $p['status'] ?>"><?= ucfirst(str_replace('_', ' ', $p['status'])) ?></span></td>
     </tr>
     <?php endforeach; ?>
+    </tbody>
+</table>
+<?php endif; ?>
+
+<!-- Units -->
+<h2>Units</h2>
+<?php if (empty($units)): ?>
+<p style="color:#6b7280">No units on record.</p>
+<?php else: ?>
+<table>
+    <thead>
+        <tr>
+            <th>#</th>
+            <th>Project</th>
+            <th>Unit</th>
+            <th>Block</th>
+            <th>Category / Size</th>
+            <th>Commission</th>
+            <th>Paid</th>
+            <th>Balance</th>
+            <th>Maturity</th>
+            <th>Status</th>
+        </tr>
+    </thead>
+    <tbody>
+    <?php $uIdx = 0; foreach ($units as $u): $uIdx++; ?>
+    <tr>
+        <td><?= $uIdx ?></td>
+        <td><?= htmlspecialchars($u['project_name'] ?? '-') ?></td>
+        <td style="font-weight:600"><?= htmlspecialchars($u['unit_number']) ?></td>
+        <td><?= htmlspecialchars($u['block_number'] ?: '-') ?></td>
+        <td><?= htmlspecialchars(implode(' / ', array_filter([$u['category'], $u['plot_size']])) ?: '-') ?></td>
+        <td><?= $pkr($u['commission_amount']) ?></td>
+        <td><?= $pkr($u['paid_amount']) ?></td>
+        <td><?= $pkr($u['balance']) ?></td>
+        <td><span class="badge badge-<?= $u['maturity_status'] ?>"><?= ucfirst($u['maturity_status']) ?></span></td>
+        <td><span class="badge badge-<?= $u['pay_status'] ?>"><?= $payLabels[$u['pay_status']] ?></span></td>
+    </tr>
+    <?php endforeach; ?>
+    <tr class="total-row">
+        <td colspan="5">Total</td>
+        <td><?= $pkr($totalCommission) ?></td>
+        <td><?= $pkr(array_sum(array_column($units, 'paid_amount'))) ?></td>
+        <td><?= $pkr(array_sum(array_column($units, 'balance'))) ?></td>
+        <td colspan="2"></td>
+    </tr>
     </tbody>
 </table>
 <?php endif; ?>
@@ -130,6 +191,7 @@ $pkr = fn($v) => 'PKR ' . number_format((float)$v, 0);
             <th>#</th>
             <th>Date</th>
             <th>Project</th>
+            <th>Unit</th>
             <th>Amount</th>
             <th>Type</th>
             <th>Reference</th>
@@ -142,6 +204,7 @@ $pkr = fn($v) => 'PKR ' . number_format((float)$v, 0);
         <td><?= $idx ?></td>
         <td style="white-space:nowrap"><?= date('d M Y', strtotime($p['payment_date'])) ?></td>
         <td><?= htmlspecialchars($p['project_name'] ?? '-') ?></td>
+        <td><?= $p['unit_number'] !== null ? htmlspecialchars($p['unit_number']) : '-' ?></td>
         <td style="font-weight:600"><?= $pkr($p['amount']) ?></td>
         <td><span class="badge badge-<?= $p['payment_type'] ?>"><?= ucfirst($p['payment_type']) ?></span></td>
         <td><?= htmlspecialchars($p['reference'] ?? '-') ?></td>
@@ -149,7 +212,7 @@ $pkr = fn($v) => 'PKR ' . number_format((float)$v, 0);
     </tr>
     <?php endforeach; ?>
     <tr class="total-row">
-        <td colspan="3">Total</td>
+        <td colspan="4">Total</td>
         <td><?= $pkr($totalPaid) ?></td>
         <td colspan="3"></td>
     </tr>

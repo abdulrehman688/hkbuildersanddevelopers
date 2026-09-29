@@ -4,6 +4,7 @@ Security::requireAdmin();
 $pageTitle  = 'Builders - Payments';
 $activePage = 'builders';
 $pkr        = fn($v) => 'PKR ' . number_format((float)$v, 0);
+$js         = fn($v) => json_encode($v, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP);
 $monthNames = ['','January','February','March','April','May','June','July','August','September','October','November','December'];
 
 $typeLabels = ['advance' => 'Advance', 'installment' => 'Installment', 'final' => 'Final', 'other' => 'Other'];
@@ -102,11 +103,12 @@ ob_start();
 <div style="padding:48px;text-align:center;color:var(--text-muted)">No payments found.</div>
 <?php else: ?>
 <div style="overflow-x:auto">
-<table class="data-table" style="min-width:800px">
+<table class="data-table" style="min-width:900px">
     <thead>
         <tr>
             <th>Builder</th>
             <th>Project</th>
+            <th>Unit</th>
             <th>Amount</th>
             <th>Type</th>
             <th>Date</th>
@@ -120,6 +122,14 @@ ob_start();
     <tr>
         <td style="font-weight:600"><?= Security::e($p['builder_name']) ?></td>
         <td style="color:var(--text-muted);font-size:13px"><?= Security::e($p['project_name'] ?? '-') ?></td>
+        <td style="font-size:13px">
+            <?php if ($p['unit_number'] !== null): ?>
+                <span style="font-weight:600"><?= Security::e($p['unit_number']) ?></span>
+                <?php if ($p['block_number']): ?><div style="font-size:11px;color:var(--text-muted)">Block <?= Security::e($p['block_number']) ?></div><?php endif; ?>
+            <?php else: ?>
+                <span style="font-size:11px;color:#b45309">Not assigned</span>
+            <?php endif; ?>
+        </td>
         <td style="font-weight:600;color:var(--gold)"><?= $pkr($p['amount']) ?></td>
         <td>
             <span style="padding:3px 10px;border-radius:12px;font-size:11px;font-weight:600;
@@ -132,7 +142,7 @@ ob_start();
         <td style="font-size:12px;color:var(--text-muted)"><?= Security::e($p['created_by_name'] ?? '-') ?></td>
         <td>
             <div style="display:flex;gap:6px">
-                <button class="btn btn-sm" onclick='editPay(<?= json_encode($p) ?>)'>Edit</button>
+                <button class="btn btn-sm" onclick='editPay(<?= $js($p) ?>)'>Edit</button>
                 <form method="POST" action="<?= APP_URL ?>/admin/builders/payments" style="margin:0">
                     <?= Security::csrfField() ?>
                     <input type="hidden" name="form_action" value="delete">
@@ -159,32 +169,44 @@ ob_start();
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
             </button>
         </div>
-        <form method="POST" action="<?= APP_URL ?>/admin/builders/payments">
+        <form method="POST" action="<?= APP_URL ?>/admin/builders/payments" id="addPayForm">
             <?= Security::csrfField() ?>
             <input type="hidden" name="form_action" value="add">
             <div class="modal-body" id="addPayBody">
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
                     <div class="form-group" style="grid-column:1/-1">
                         <label class="form-label">Builder *</label>
-                        <select name="builder_id" class="form-input" required>
+                        <select name="builder_id" class="form-input" required onchange="payCascade(this.form)">
                             <option value="">-- Select Builder --</option>
                             <?php foreach ($allBuilders as $b): ?>
                             <option value="<?= $b['id'] ?>"><?= Security::e($b['name']) ?></option>
                             <?php endforeach; ?>
                         </select>
                     </div>
-                    <div class="form-group" style="grid-column:1/-1">
+                    <div class="form-group">
                         <label class="form-label">Project</label>
-                        <select name="project_id" class="form-input">
+                        <select name="project_id" class="form-input" onchange="payCascade(this.form)">
                             <option value="">-- No Project --</option>
                             <?php foreach ($allProjects as $p): ?>
-                            <option value="<?= $p['id'] ?>"><?= Security::e($p['builder_name'] . ' - ' . $p['name']) ?></option>
+                            <option value="<?= $p['id'] ?>" data-builder="<?= $p['builder_id'] ?>"><?= Security::e($p['name']) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Unit</label>
+                        <select name="unit_id" class="form-input" onchange="payUnitPicked(this)">
+                            <option value="">-- Not for one unit --</option>
+                            <?php foreach ($unitOptions as $u): ?>
+                            <option value="<?= $u['id'] ?>" data-project="<?= $u['project_id'] ?>" data-balance="<?= (float)$u['balance'] ?>">
+                                <?= Security::e($u['unit_number'] . ($u['block_number'] ? ' (Block ' . $u['block_number'] . ')' : '')) ?>
+                                &middot; <?= $u['balance'] > 0 ? 'balance ' . $pkr($u['balance']) : 'fully paid' ?>
+                            </option>
                             <?php endforeach; ?>
                         </select>
                     </div>
                     <div class="form-group">
                         <label class="form-label">Amount (PKR) *</label>
-                        <input type="number" step="1" min="0" name="amount" class="form-input" value="0" required>
+                        <input type="number" step="1" min="1" name="amount" class="form-input" required>
                     </div>
                     <div class="form-group">
                         <label class="form-label">Payment Type *</label>
@@ -208,6 +230,7 @@ ob_start();
                     <label class="form-label">Notes</label>
                     <textarea name="notes" class="form-input" rows="2" placeholder="Optional notes..."></textarea>
                 </div>
+                <div style="font-size:11px;color:var(--text-muted)">Choose the unit this payment is for, so the unit shows as paid in Units.</div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" onclick="closeModal('addPayModal')">Cancel</button>
@@ -226,10 +249,10 @@ ob_start();
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
             </button>
         </div>
-        <form method="POST" action="<?= APP_URL ?>/admin/builders/payments">
+        <form method="POST" action="<?= APP_URL ?>/admin/builders/payments" id="editPayForm">
             <?= Security::csrfField() ?>
             <input type="hidden" name="form_action" value="edit">
-            <input type="hidden" name="payment_id"  id="editPayId">
+            <input type="hidden" name="payment_id">
             <div class="modal-body" id="editPayBody"></div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" onclick="closeModal('editPayModal')">Cancel</button>
@@ -240,23 +263,50 @@ ob_start();
 </div>
 
 <script>
-function editPay(data) {
-    document.getElementById('editPayId').value = data.id;
-    const src = document.getElementById('addPayBody');
-    const dst = document.getElementById('editPayBody');
-    dst.innerHTML = src.innerHTML;
-    const fields = { builder_id: data.builder_id, project_id: data.project_id || '',
-        amount: data.amount, payment_type: data.payment_type,
-        payment_date: data.payment_date, reference: data.reference || '', notes: data.notes || '' };
-    for (const [key, val] of Object.entries(fields)) {
-        const el = dst.querySelector('[name="' + key + '"]');
-        if (!el) continue;
-        if (el.tagName === 'SELECT') {
-            for (const opt of el.options) opt.selected = (String(opt.value) === String(val));
-        } else { el.value = val ?? ''; }
+// Builder narrows the projects, project narrows the units.
+function payCascade(form) {
+    const builderId = form.builder_id.value;
+    const project   = form.project_id;
+    const unit      = form.unit_id;
+    for (const opt of project.options) {
+        if (opt.value) opt.hidden = builderId !== '' && opt.dataset.builder !== builderId;
     }
+    if (project.selectedOptions[0] && project.selectedOptions[0].hidden) project.value = '';
+    for (const opt of unit.options) {
+        if (opt.value) opt.hidden = opt.dataset.project !== project.value;
+    }
+    if (unit.selectedOptions[0] && unit.selectedOptions[0].hidden) unit.value = '';
+    unit.disabled = project.value === '';
+}
+
+// Picking a unit fills in what is still owed on it, if no amount was typed yet.
+function payUnitPicked(select) {
+    const opt    = select.selectedOptions[0];
+    const amount = select.form.amount;
+    if (opt && opt.value && (amount.value === '' || Number(amount.value) === 0)) {
+        amount.value = Math.round(Number(opt.dataset.balance)) || '';
+    }
+}
+
+function editPay(data) {
+    const form = document.getElementById('editPayForm');
+    const body = document.getElementById('editPayBody');
+    body.innerHTML = document.getElementById('addPayBody').innerHTML;
+    form.payment_id.value = data.id;
+    const values = {
+        builder_id: data.builder_id, project_id: data.project_id || '', unit_id: data.unit_id || '',
+        amount: data.amount, payment_type: data.payment_type, payment_date: data.payment_date,
+        reference: data.reference || '', notes: data.notes || ''
+    };
+    for (const [name, val] of Object.entries(values)) {
+        const el = body.querySelector('[name="' + name + '"]');
+        if (el) el.value = val ?? '';
+    }
+    payCascade(form);
     openModal('editPayModal');
 }
+
+payCascade(document.getElementById('addPayForm'));
 </script>
 
 <?php

@@ -1,5 +1,5 @@
 /* ============================================================
-   HK Builders & Developers — CRM Design System
+   HK Builders & Developers - CRM Design System
    Fonts: Cormorant Garamond (headings) + Jost (body)
    Colors: Navy #0a1628 | Gold #c9a84c | Gold Light #e2c97e
    ============================================================ */
@@ -1314,7 +1314,7 @@ input, select, textarea { font-family: 'Jost', sans-serif; max-width: 100%; }
 }
 
 /* ============================================================
-   REPORTS — CHARTS
+   REPORTS - CHARTS
    ============================================================ */
 .bar-chart {
   display: flex;
@@ -1527,7 +1527,7 @@ input, select, textarea { font-family: 'Jost', sans-serif; max-width: 100%; }
 .sidebar-overlay.open { display: block; }
 
 /* ============================================================
-   RESPONSIVE — TABLET (≤ 1024px)
+   RESPONSIVE - TABLET (≤ 1024px)
    ============================================================ */
 @media (max-width: 1024px) {
   :root { --sidebar-w: 220px; }
@@ -1541,7 +1541,7 @@ input, select, textarea { font-family: 'Jost', sans-serif; max-width: 100%; }
 }
 
 /* ============================================================
-   RESPONSIVE — MOBILE (≤ 768px)
+   RESPONSIVE - MOBILE (≤ 768px)
    ============================================================ */
 @media (max-width: 768px) {
 
@@ -1694,7 +1694,7 @@ input, select, textarea { font-family: 'Jost', sans-serif; max-width: 100%; }
 }
 
 /* ============================================================
-   RESPONSIVE — SMALL MOBILE (≤ 400px)
+   RESPONSIVE - SMALL MOBILE (≤ 400px)
    ============================================================ */
 @media (max-width: 400px) {
   .stats-grid { grid-template-columns: 1fr; }
@@ -1708,7 +1708,7 @@ input, select, textarea { font-family: 'Jost', sans-serif; max-width: 100%; }
 }
 
 /* ============================================================
-   GLOBAL PRINT RESET — applied to every CRM page
+   GLOBAL PRINT RESET - applied to every CRM page
    Individual views add only page-specific overrides on top
    ============================================================ */
 @media print {
@@ -1752,6 +1752,7 @@ input, select, textarea { font-family: 'Jost', sans-serif; max-width: 100%; }
   /* Tables */
   .data-table {
     width: 100% !important;
+    min-width: 0 !important;
     font-size: 10px !important;
     table-layout: fixed !important;
     border-collapse: collapse !important;

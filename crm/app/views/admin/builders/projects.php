@@ -4,6 +4,7 @@ Security::requireAdmin();
 $pageTitle  = 'Builders - Projects';
 $activePage = 'builders';
 $pkr        = fn($v) => 'PKR ' . number_format((float)$v, 0);
+$js         = fn($v) => json_encode($v, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP);
 
 $statusLabels = ['active' => 'Active', 'completed' => 'Completed', 'on_hold' => 'On Hold'];
 $statusColors = ['active' => ['rgba(34,197,94,.12)', '#16a34a'], 'completed' => ['rgba(59,130,246,.12)', '#2563eb'], 'on_hold' => ['rgba(245,158,11,.12)', '#d97706']];
@@ -80,29 +81,41 @@ ob_start();
 <div style="padding:48px;text-align:center;color:var(--text-muted)">No projects found.</div>
 <?php else: ?>
 <div style="overflow-x:auto">
-<table class="data-table" style="min-width:750px">
+<table class="data-table" style="min-width:1050px">
     <thead>
         <tr>
             <th>Builder</th>
             <th>Project Name</th>
             <th>Location</th>
             <th>Plots</th>
+            <th>Units</th>
             <th>Total Value</th>
+            <th>Commission</th>
             <th>Paid</th>
+            <th>Unpaid</th>
             <th>Status</th>
             <th></th>
         </tr>
     </thead>
     <tbody>
     <?php foreach ($projects as $p): ?>
-    <?php [$bg, $clr] = $statusColors[$p['status']] ?? ['rgba(156,163,175,.15)', '#6b7280']; ?>
+    <?php
+        [$bg, $clr] = $statusColors[$p['status']] ?? ['rgba(156,163,175,.15)', '#6b7280'];
+        $unpaid = max(0, (float)$p['total_commission'] - (float)$p['paid_amount']);
+    ?>
     <tr>
         <td style="color:var(--text-muted);font-size:13px"><?= Security::e($p['builder_name']) ?></td>
         <td style="font-weight:600"><?= Security::e($p['name']) ?></td>
         <td style="color:var(--text-muted)"><?= Security::e($p['location'] ?? '-') ?></td>
         <td style="color:#6366f1;font-weight:600"><?= (int)$p['total_plots'] ?: '-' ?></td>
-        <td style="font-weight:600"><?= $p['total_value'] > 0 ? $pkr($p['total_value']) : '-' ?></td>
-        <td style="font-weight:600;color:var(--gold)"><?= $pkr($p['paid_amount']) ?></td>
+        <td>
+            <a href="<?= APP_URL ?>/admin/builders/units?builder_id=<?= (int)$p['builder_id'] ?>&amp;project_id=<?= (int)$p['id'] ?>"
+               style="font-weight:600;color:#8b5cf6;text-decoration:none" title="View units"><?= (int)$p['unit_count'] ?></a>
+        </td>
+        <td style="font-weight:600;white-space:nowrap"><?= $p['total_value'] > 0 ? $pkr($p['total_value']) : '-' ?></td>
+        <td style="font-weight:600;color:var(--gold);white-space:nowrap"><?= $pkr($p['total_commission']) ?></td>
+        <td style="font-weight:600;color:#16a34a;white-space:nowrap"><?= $pkr($p['paid_amount']) ?></td>
+        <td style="font-weight:600;white-space:nowrap;color:<?= $unpaid > 0 ? '#dc2626' : 'var(--text-muted)' ?>"><?= $pkr($unpaid) ?></td>
         <td>
             <span style="padding:3px 10px;border-radius:12px;font-size:11px;font-weight:600;background:<?= $bg ?>;color:<?= $clr ?>">
                 <?= $statusLabels[$p['status']] ?? ucfirst($p['status']) ?>
@@ -110,7 +123,7 @@ ob_start();
         </td>
         <td>
             <div style="display:flex;gap:6px">
-                <button class="btn btn-sm" onclick='editProject(<?= json_encode($p) ?>)'>Edit</button>
+                <button class="btn btn-sm" onclick='editProject(<?= $js($p) ?>)'>Edit</button>
                 <form method="POST" action="<?= APP_URL ?>/admin/builders/projects" style="margin:0">
                     <?= Security::csrfField() ?>
                     <input type="hidden" name="form_action" value="delete">

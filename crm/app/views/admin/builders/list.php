@@ -4,6 +4,7 @@ Security::requireAdmin();
 $pageTitle  = 'Builders';
 $activePage = 'builders';
 $pkr        = fn($v) => 'PKR ' . number_format((float)$v, 0);
+$js         = fn($v) => json_encode($v, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP);
 
 ob_start();
 ?>
@@ -52,10 +53,13 @@ ob_start();
 <!-- Stats -->
 <div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:24px">
     <?php foreach ([
-        ['Active Builders', $stats['builders']   ?? 0,   '#6366f1', false],
-        ['Total Projects',  $stats['projects']   ?? 0,   '#3b82f6', false],
-        ['Total Paid Out',  $pkr($stats['total_paid'] ?? 0), '#f59e0b', true],
-    ] as [$label, $val, $color, $isPkr]): ?>
+        ['Active Builders',  (int)($stats['builders'] ?? 0),       '#6366f1'],
+        ['Total Projects',   (int)($stats['projects'] ?? 0),       '#3b82f6'],
+        ['Total Units',      (int)($stats['units']    ?? 0),       '#8b5cf6'],
+        ['Total Commission', $pkr($stats['total_commission'] ?? 0), 'var(--gold)'],
+        ['Total Paid',       $pkr($stats['total_paid']       ?? 0), '#16a34a'],
+        ['Unpaid',           $pkr($stats['unpaid']           ?? 0), '#dc2626'],
+    ] as [$label, $val, $color]): ?>
     <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:10px 18px">
         <div style="font-size:20px;font-weight:700;color:<?= $color ?>"><?= $val ?></div>
         <div style="font-size:12px;color:var(--text-muted);margin-top:2px"><?= $label ?></div>
@@ -69,26 +73,33 @@ ob_start();
 <div style="padding:48px;text-align:center;color:var(--text-muted)">No builders found. Add your first builder.</div>
 <?php else: ?>
 <div style="overflow-x:auto">
-<table class="data-table" style="min-width:700px">
+<table class="data-table" style="min-width:900px">
     <thead>
         <tr>
             <th>Builder</th>
             <th>Contact</th>
-            <th>Phone</th>
             <th>Projects</th>
-            <th>Total Paid</th>
+            <th>Units</th>
+            <th>Commission</th>
+            <th>Paid</th>
+            <th>Unpaid</th>
             <th>Status</th>
             <th></th>
         </tr>
     </thead>
     <tbody>
-    <?php foreach ($builders as $b): ?>
+    <?php foreach ($builders as $b): $unpaid = max(0, (float)$b['total_commission'] - (float)$b['total_paid']); ?>
     <tr>
         <td style="font-weight:600"><?= Security::e($b['name']) ?></td>
-        <td style="color:var(--text-muted)"><?= Security::e($b['contact_person'] ?? '-') ?></td>
-        <td style="color:var(--text-muted)"><?= Security::e($b['phone'] ?? '-') ?></td>
+        <td style="color:var(--text-muted);font-size:13px">
+            <?= Security::e($b['contact_person'] ?: '-') ?>
+            <?php if ($b['phone']): ?><div style="font-size:12px"><?= Security::e($b['phone']) ?></div><?php endif; ?>
+        </td>
         <td style="font-weight:600;color:#6366f1"><?= (int)$b['project_count'] ?></td>
-        <td style="font-weight:600;color:var(--gold)"><?= $pkr($b['total_paid']) ?></td>
+        <td style="font-weight:600;color:#8b5cf6"><?= (int)$b['unit_count'] ?></td>
+        <td style="font-weight:600;color:var(--gold);white-space:nowrap"><?= $pkr($b['total_commission']) ?></td>
+        <td style="font-weight:600;color:#16a34a;white-space:nowrap"><?= $pkr($b['total_paid']) ?></td>
+        <td style="font-weight:600;white-space:nowrap;color:<?= $unpaid > 0 ? '#dc2626' : 'var(--text-muted)' ?>"><?= $pkr($unpaid) ?></td>
         <td>
             <span style="padding:3px 10px;border-radius:12px;font-size:11px;font-weight:600;
                 background:<?= $b['status']==='active' ? 'rgba(34,197,94,.12)' : 'rgba(156,163,175,.15)' ?>;
@@ -99,13 +110,13 @@ ob_start();
         <td>
             <div style="display:flex;gap:6px">
                 <a href="<?= APP_URL ?>/admin/builders/detail/<?= $b['id'] ?>" class="btn btn-sm">View</a>
-                <button class="btn btn-sm" onclick='editBuilder(<?= json_encode($b) ?>)'>Edit</button>
+                <button class="btn btn-sm" onclick='editBuilder(<?= $js($b) ?>)'>Edit</button>
                 <form method="POST" action="<?= APP_URL ?>/admin/builders" style="margin:0">
                     <?= Security::csrfField() ?>
                     <input type="hidden" name="form_action" value="delete">
                     <input type="hidden" name="builder_id"  value="<?= (int)$b['id'] ?>">
                     <button type="submit" class="btn btn-sm btn-danger"
-                        onclick="return confirm('Delete <?= addslashes(Security::e($b['name'])) ?> and all their data?')">Delete</button>
+                        onclick='return confirm(<?= $js('Delete ' . $b['name'] . ' and all their projects, units and payments?') ?>)'>Delete</button>
                 </form>
             </div>
         </td>

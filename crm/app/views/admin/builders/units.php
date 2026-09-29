@@ -4,6 +4,28 @@ Security::requireAdmin();
 $pageTitle  = 'Builders - Units';
 $activePage = 'builders';
 $pkr = fn($v) => 'PKR ' . number_format((float)$v, 0);
+$js  = fn($v) => json_encode($v, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP);
+
+$formAction = APP_URL . '/admin/builders/units' . $filterQs;
+$scope      = array_filter(['builder_id' => $fBuilderId, 'project_id' => $fProjectId]);
+$scopeUrl   = function (array $extra = []) use ($scope): string {
+    $q = http_build_query(array_filter($scope + $extra));
+    return APP_URL . '/admin/builders/units' . ($q ? '?' . $q : '');
+};
+$filtered = $fMaturity !== '' || $fPay !== '';
+
+$payLabels = ['paid' => 'Paid', 'partial' => 'Partial', 'unpaid' => 'Unpaid'];
+$payColors = [
+    'paid'    => ['rgba(34,197,94,.12)',  '#16a34a'],
+    'partial' => ['rgba(245,158,11,.14)', '#b45309'],
+    'unpaid'  => ['rgba(220,38,38,.10)',  '#dc2626'],
+];
+
+$filterProjects = $fBuilderId
+    ? array_filter($allProjects, fn($p) => (int)$p['builder_id'] === $fBuilderId)
+    : $allProjects;
+
+$categoryOptions = array_unique(array_merge(['Residential', 'Commercial'], $suggestions['categories']));
 
 ob_start();
 ?>
@@ -53,31 +75,52 @@ ob_start();
     <?php endforeach; ?>
 </div>
 
-<!-- Stats -->
-<div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:20px">
-    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:8px 16px">
-        <span style="font-size:15px;font-weight:700;color:#6366f1"><?= (int)($unitStats['total_units'] ?? 0) ?></span>
-        <span style="font-size:12px;color:var(--text-muted);margin-left:6px">Total Units</span>
-    </div>
-    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:8px 16px">
-        <span style="font-size:15px;font-weight:700;color:var(--gold)"><?= $pkr($unitStats['total_commission'] ?? 0) ?></span>
-        <span style="font-size:12px;color:var(--text-muted);margin-left:6px">Total Commission</span>
-    </div>
-    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:8px 16px">
-        <span style="font-size:15px;font-weight:700;color:#16a34a"><?= $pkr($unitStats['paid_commission'] ?? 0) ?></span>
-        <span style="font-size:12px;color:var(--text-muted);margin-left:6px">Paid</span>
-    </div>
-    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:8px 16px">
-        <span style="font-size:15px;font-weight:700;color:#dc2626"><?= $pkr($unitStats['unpaid_commission'] ?? 0) ?></span>
-        <span style="font-size:12px;color:var(--text-muted);margin-left:6px">Unpaid</span>
-    </div>
+<!-- Unit counts (click to filter) -->
+<div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:14px">
+    <?php foreach ([
+        ['Total Units', (int)($unitStats['total_units']    ?? 0), '#6366f1', $scopeUrl(),                           !$filtered],
+        ['Mature',      (int)($unitStats['mature_units']   ?? 0), '#16a34a', $scopeUrl(['maturity' => 'mature']),   $fMaturity === 'mature'],
+        ['Immature',    (int)($unitStats['immature_units'] ?? 0), '#d97706', $scopeUrl(['maturity' => 'immature']), $fMaturity === 'immature'],
+    ] as [$label, $count, $color, $url, $on]): ?>
+    <a href="<?= $url ?>" style="text-decoration:none">
+        <div style="background:var(--bg-card);border:1px solid <?= $on ? $color : 'var(--border)' ?>;border-radius:8px;padding:7px 14px;display:flex;align-items:center;gap:7px">
+            <span style="font-size:17px;font-weight:700;color:<?= $color ?>"><?= $count ?></span>
+            <span style="font-size:12px;color:var(--text-muted)"><?= $label ?></span>
+        </div>
+    </a>
+    <?php endforeach; ?>
 </div>
+
+<!-- Money: commission from units, paid from Payments -->
+<div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:20px">
+    <?php foreach ([
+        ['Total Commission', $unitStats['total_commission'] ?? 0, 'var(--gold)'],
+        ['Paid',             $unitStats['total_paid']       ?? 0, '#16a34a'],
+        ['Unpaid',           $unitStats['unpaid']           ?? 0, '#dc2626'],
+    ] as [$label, $amount, $color]): ?>
+    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:10px 18px;min-width:170px">
+        <div style="font-size:11px;color:var(--text-muted);margin-bottom:3px;text-transform:uppercase;letter-spacing:.5px"><?= $label ?></div>
+        <div style="font-size:17px;font-weight:700;color:<?= $color ?>"><?= $pkr($amount) ?></div>
+    </div>
+    <?php endforeach; ?>
+</div>
+
+<?php if ((float)($unitStats['unassigned_paid'] ?? 0) > 0): ?>
+<div class="alert alert-info">
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z"/></svg>
+    <span>
+        <?= $pkr($unitStats['unassigned_paid']) ?> received is not linked to any unit. It is counted in Paid above, but no unit shows it yet.
+        Open <a href="<?= APP_URL ?>/admin/builders/payments<?= $scope ? '?' . http_build_query($scope) : '' ?>" style="color:inherit;font-weight:600">Payments</a>
+        and edit the payment to choose its unit.
+    </span>
+</div>
+<?php endif; ?>
 
 <!-- Filters -->
 <div class="filter-bar" style="margin-bottom:20px">
     <form method="GET" action="<?= APP_URL ?>/admin/builders/units">
         <div class="filter-row">
-            <select name="builder_id" class="filter-input" id="filterBuilder" onchange="this.form.submit()">
+            <select name="builder_id" class="filter-input" onchange="this.form.project_id.value='';this.form.submit()">
                 <option value="">All Builders</option>
                 <?php foreach ($allBuilders as $b): ?>
                 <option value="<?= $b['id'] ?>" <?= $fBuilderId == $b['id'] ? 'selected' : '' ?>><?= Security::e($b['name']) ?></option>
@@ -85,14 +128,20 @@ ob_start();
             </select>
             <select name="project_id" class="filter-input">
                 <option value="">All Projects</option>
-                <?php foreach ($allProjects as $p): ?>
-                <option value="<?= $p['id'] ?>" <?= $fProjectId == $p['id'] ? 'selected' : '' ?>><?= Security::e($p['name']) ?></option>
+                <?php foreach ($filterProjects as $p): ?>
+                <option value="<?= $p['id'] ?>" <?= $fProjectId == $p['id'] ? 'selected' : '' ?>><?= Security::e($p['name'] . ($fBuilderId ? '' : ' (' . $p['builder_name'] . ')')) ?></option>
                 <?php endforeach; ?>
             </select>
-            <select name="status" class="filter-input">
-                <option value="">All Statuses</option>
-                <option value="unpaid" <?= $fStatus === 'unpaid' ? 'selected' : '' ?>>Unpaid</option>
-                <option value="paid"   <?= $fStatus === 'paid'   ? 'selected' : '' ?>>Paid</option>
+            <select name="maturity" class="filter-input">
+                <option value="">All Maturity</option>
+                <option value="mature"   <?= $fMaturity === 'mature'   ? 'selected' : '' ?>>Mature</option>
+                <option value="immature" <?= $fMaturity === 'immature' ? 'selected' : '' ?>>Immature</option>
+            </select>
+            <select name="pay" class="filter-input">
+                <option value="">All Payment Status</option>
+                <?php foreach ($payLabels as $val => $label): ?>
+                <option value="<?= $val ?>" <?= $fPay === $val ? 'selected' : '' ?>><?= $label ?></option>
+                <?php endforeach; ?>
             </select>
             <button type="submit" class="btn btn-secondary">Filter</button>
             <a href="<?= APP_URL ?>/admin/builders/units" class="btn btn-secondary">Clear</a>
@@ -103,79 +152,126 @@ ob_start();
 <!-- Table -->
 <div class="card" style="padding:0;overflow:hidden">
 <?php if (empty($units)): ?>
-<div style="padding:48px;text-align:center;color:var(--text-muted)">No units found.</div>
+<div style="padding:48px;text-align:center;color:var(--text-muted)"><?= $filtered ? 'No units match these filters.' : 'No units yet. Add the first unit sold.' ?></div>
 <?php else: ?>
 <div style="overflow-x:auto">
-<table class="data-table" style="min-width:900px">
+<table class="data-table units-table" style="min-width:1180px">
     <thead>
         <tr>
             <th>Builder / Project</th>
             <th>Unit No.</th>
             <th>Block</th>
-            <th>Category</th>
-            <th>Plot Size</th>
+            <th>Category / Size</th>
             <th>Total Cost</th>
             <th>Down Payment</th>
             <th>Commission</th>
+            <th>Paid</th>
+            <th>Balance</th>
+            <th>Maturity</th>
             <th>Status</th>
             <th></th>
         </tr>
     </thead>
     <tbody>
-    <?php foreach ($units as $u): ?>
+    <?php foreach ($units as $u):
+        [$sBg, $sClr] = $payColors[$u['pay_status']];
+        $isMature = $u['maturity_status'] === 'mature';
+        $payCount = (int)$u['pay_count'];
+        $payData  = [
+            'id'           => (int)$u['id'],
+            'unit_number'  => $u['unit_number'],
+            'block_number' => $u['block_number'],
+            'builder_name' => $u['builder_name'],
+            'project_name' => $u['project_name'],
+            'commission'   => (float)$u['commission_amount'],
+            'paid'         => (float)$u['paid_amount'],
+            'balance'      => (float)$u['balance'],
+        ];
+        $unpayMsg  = 'Mark unit ' . $u['unit_number'] . ' as unpaid? This deletes its ' . $payCount . ' payment record'
+                   . ($payCount === 1 ? '' : 's') . ' (' . $pkr($u['paid_amount']) . ') from Payments.';
+        $deleteMsg = 'Delete unit ' . $u['unit_number'] . '?'
+                   . ($payCount ? ' Its payments stay in Payments but will no longer be linked to a unit.' : '');
+    ?>
     <tr>
         <td>
             <div style="font-weight:600;font-size:13px"><?= Security::e($u['builder_name']) ?></div>
             <div style="font-size:11px;color:var(--text-muted)"><?= Security::e($u['project_name']) ?></div>
         </td>
         <td style="font-weight:600"><?= Security::e($u['unit_number']) ?></td>
-        <td style="color:var(--text-muted)"><?= Security::e($u['block_number'] ?? '-') ?></td>
-        <td style="color:var(--text-muted);font-size:12px"><?= Security::e($u['category'] ?? '-') ?></td>
-        <td style="color:var(--text-muted);font-size:12px"><?= Security::e($u['plot_size'] ?? '-') ?></td>
-        <td style="font-weight:600"><?= $pkr($u['total_cost']) ?></td>
+        <td style="color:var(--text-muted)"><?= Security::e($u['block_number'] ?: '-') ?></td>
+        <td style="font-size:12px;color:var(--text-muted)">
+            <?= Security::e($u['category'] ?: '-') ?>
+            <?php if ($u['plot_size']): ?><div><?= Security::e($u['plot_size']) ?></div><?php endif; ?>
+        </td>
+        <td><?= $pkr($u['total_cost']) ?></td>
         <td><?= $pkr($u['down_payment']) ?></td>
         <td style="font-weight:600;color:var(--gold)"><?= $pkr($u['commission_amount']) ?></td>
+        <td style="color:#16a34a"><?= $pkr($u['paid_amount']) ?></td>
+        <td style="font-weight:600;color:<?= $u['balance'] > 0 ? '#dc2626' : 'var(--text-muted)' ?>"><?= $pkr($u['balance']) ?></td>
         <td>
-            <?php if ($u['commission_status'] === 'paid'): ?>
-                <span style="padding:3px 10px;border-radius:12px;font-size:11px;font-weight:600;background:rgba(34,197,94,.12);color:#16a34a;border:1px solid #bbf7d0">Paid</span>
-            <?php else: ?>
-                <span style="padding:3px 10px;border-radius:12px;font-size:11px;font-weight:600;background:rgba(220,38,38,.1);color:#dc2626;border:1px solid #fecaca">Unpaid</span>
-            <?php endif; ?>
+            <form method="POST" action="<?= $formAction ?>" style="margin:0">
+                <?= Security::csrfField() ?>
+                <input type="hidden" name="form_action" value="maturity">
+                <input type="hidden" name="unit_id"     value="<?= (int)$u['id'] ?>">
+                <button type="submit" class="unit-toggle" title="Click to mark <?= $isMature ? 'immature' : 'mature' ?>"
+                    style="background:<?= $isMature ? 'rgba(34,197,94,.12)' : 'rgba(245,158,11,.14)' ?>;color:<?= $isMature ? '#16a34a' : '#b45309' ?>">
+                    <?= $isMature ? 'Mature' : 'Immature' ?>
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5"/></svg>
+                </button>
+            </form>
+        </td>
+        <td>
+            <span style="padding:3px 10px;border-radius:12px;font-size:11px;font-weight:600;background:<?= $sBg ?>;color:<?= $sClr ?>">
+                <?= $payLabels[$u['pay_status']] ?>
+            </span>
         </td>
         <td>
             <div style="display:flex;gap:6px">
-                <button class="btn btn-sm" onclick='editUnit(<?= json_encode($u) ?>)'>Edit</button>
-                <!-- Toggle paid/unpaid -->
-                <form method="POST" action="<?= APP_URL ?>/admin/builders/units" style="margin:0">
+                <?php if ($u['balance'] > 0): ?>
+                <button type="button" class="btn btn-sm" style="color:#16a34a" onclick='openPayModal(<?= $js($payData) ?>)'>Mark Paid</button>
+                <?php elseif ($payCount > 0): ?>
+                <form method="POST" action="<?= $formAction ?>" style="margin:0">
                     <?= Security::csrfField() ?>
-                    <input type="hidden" name="form_action"   value="toggle">
-                    <input type="hidden" name="unit_id"       value="<?= (int)$u['id'] ?>">
-                    <input type="hidden" name="f_builder_id"  value="<?= $fBuilderId ?>">
-                    <input type="hidden" name="f_project_id"  value="<?= $fProjectId ?>">
-                    <input type="hidden" name="f_status"      value="<?= Security::e($fStatus) ?>">
-                    <button type="submit" class="btn btn-sm" style="<?= $u['commission_status']==='paid' ? 'color:#dc2626' : 'color:#16a34a' ?>">
-                        <?= $u['commission_status'] === 'paid' ? 'Mark Unpaid' : 'Mark Paid' ?>
-                    </button>
+                    <input type="hidden" name="form_action" value="unpay">
+                    <input type="hidden" name="unit_id"     value="<?= (int)$u['id'] ?>">
+                    <button type="submit" class="btn btn-sm" style="color:#dc2626" onclick='return confirm(<?= $js($unpayMsg) ?>)'>Mark Unpaid</button>
                 </form>
-                <form method="POST" action="<?= APP_URL ?>/admin/builders/units" style="margin:0">
+                <?php endif; ?>
+                <button type="button" class="btn btn-sm" onclick='editUnit(<?= $js($u) ?>)'>Edit</button>
+                <form method="POST" action="<?= $formAction ?>" style="margin:0">
                     <?= Security::csrfField() ?>
-                    <input type="hidden" name="form_action"  value="delete">
-                    <input type="hidden" name="unit_id"      value="<?= (int)$u['id'] ?>">
-                    <input type="hidden" name="f_builder_id" value="<?= $fBuilderId ?>">
-                    <input type="hidden" name="f_project_id" value="<?= $fProjectId ?>">
-                    <input type="hidden" name="f_status"     value="<?= Security::e($fStatus) ?>">
-                    <button type="submit" class="btn btn-sm btn-danger"
-                        onclick="return confirm('Delete this unit?')">Delete</button>
+                    <input type="hidden" name="form_action" value="delete">
+                    <input type="hidden" name="unit_id"     value="<?= (int)$u['id'] ?>">
+                    <button type="submit" class="btn btn-sm btn-danger" onclick='return confirm(<?= $js($deleteMsg) ?>)'>Delete</button>
                 </form>
             </div>
         </td>
     </tr>
     <?php endforeach; ?>
     </tbody>
+    <tfoot>
+        <tr style="background:var(--bg);font-weight:700;border-top:2px solid var(--border)">
+            <td colspan="4">Total &middot; <?= count($units) ?> unit<?= count($units) === 1 ? '' : 's' ?></td>
+            <td><?= $pkr(array_sum(array_column($units, 'total_cost'))) ?></td>
+            <td><?= $pkr(array_sum(array_column($units, 'down_payment'))) ?></td>
+            <td style="color:var(--gold)"><?= $pkr(array_sum(array_column($units, 'commission_amount'))) ?></td>
+            <td style="color:#16a34a"><?= $pkr(array_sum(array_column($units, 'paid_amount'))) ?></td>
+            <td style="color:#dc2626"><?= $pkr(array_sum(array_column($units, 'balance'))) ?></td>
+            <td colspan="2"></td>
+            <td></td>
+        </tr>
+    </tfoot>
 </table>
 </div>
 <?php endif; ?>
 </div>
+
+<datalist id="unitCategoryList">
+    <?php foreach ($categoryOptions as $c): ?><option value="<?= Security::e($c) ?>"><?php endforeach; ?>
+</datalist>
+<datalist id="unitSizeList">
+    <?php foreach ($suggestions['plot_sizes'] as $s): ?><option value="<?= Security::e($s) ?>"><?php endforeach; ?>
+</datalist>
 
 <!-- Add Modal -->
 <div class="modal-overlay" id="addUnitModal">
@@ -186,26 +282,23 @@ ob_start();
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
             </button>
         </div>
-        <form method="POST" action="<?= APP_URL ?>/admin/builders/units">
+        <form method="POST" action="<?= $formAction ?>" id="addUnitForm">
             <?= Security::csrfField() ?>
-            <input type="hidden" name="form_action"  value="add">
-            <input type="hidden" name="f_builder_id" value="<?= $fBuilderId ?>">
-            <input type="hidden" name="f_project_id" value="<?= $fProjectId ?>">
-            <input type="hidden" name="f_status"     value="<?= Security::e($fStatus) ?>">
+            <input type="hidden" name="form_action" value="add">
             <div class="modal-body" id="addUnitBody">
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
-                    <div class="form-group" style="grid-column:1/-1">
+                    <div class="form-group">
                         <label class="form-label">Builder *</label>
-                        <select name="builder_id" class="form-input" required id="addBuilderSel" onchange="filterProjects(this.value,'addProjectSel')">
+                        <select name="builder_id" class="form-input" required onchange="unitCascade(this.form)">
                             <option value="">-- Select Builder --</option>
                             <?php foreach ($allBuilders as $b): ?>
                             <option value="<?= $b['id'] ?>" <?= $fBuilderId == $b['id'] ? 'selected' : '' ?>><?= Security::e($b['name']) ?></option>
                             <?php endforeach; ?>
                         </select>
                     </div>
-                    <div class="form-group" style="grid-column:1/-1">
+                    <div class="form-group">
                         <label class="form-label">Project *</label>
-                        <select name="project_id" class="form-input" required id="addProjectSel">
+                        <select name="project_id" class="form-input" required>
                             <option value="">-- Select Project --</option>
                             <?php foreach ($allProjects as $p): ?>
                             <option value="<?= $p['id'] ?>" data-builder="<?= $p['builder_id'] ?>" <?= $fProjectId == $p['id'] ? 'selected' : '' ?>><?= Security::e($p['name']) ?></option>
@@ -222,11 +315,11 @@ ob_start();
                     </div>
                     <div class="form-group">
                         <label class="form-label">Category</label>
-                        <input type="text" name="category" class="form-input" placeholder="e.g. Residential, Commercial">
+                        <input type="text" name="category" class="form-input" list="unitCategoryList" placeholder="e.g. Residential, Commercial">
                     </div>
                     <div class="form-group">
                         <label class="form-label">Plot Size</label>
-                        <input type="text" name="plot_size" class="form-input" placeholder="e.g. 5 Marla, 10 Marla">
+                        <input type="text" name="plot_size" class="form-input" list="unitSizeList" placeholder="e.g. 120 sq yd, 5 Marla">
                     </div>
                     <div class="form-group">
                         <label class="form-label">Total Cost (PKR) *</label>
@@ -237,14 +330,14 @@ ob_start();
                         <input type="number" min="0" step="1" name="down_payment" class="form-input" value="0">
                     </div>
                     <div class="form-group">
-                        <label class="form-label">Commission / Rebate (PKR)</label>
-                        <input type="number" min="0" step="1" name="commission_amount" class="form-input" value="0">
+                        <label class="form-label">Commission / Rebate (PKR) *</label>
+                        <input type="number" min="0" step="1" name="commission_amount" class="form-input" value="0" required>
                     </div>
                     <div class="form-group">
-                        <label class="form-label">Commission Status</label>
-                        <select name="commission_status" class="form-input">
-                            <option value="unpaid">Unpaid</option>
-                            <option value="paid">Paid</option>
+                        <label class="form-label">Maturity</label>
+                        <select name="maturity_status" class="form-input">
+                            <option value="immature">Immature</option>
+                            <option value="mature">Mature</option>
                         </select>
                     </div>
                     <div class="form-group" style="grid-column:1/-1">
@@ -252,6 +345,7 @@ ob_start();
                         <textarea name="notes" class="form-input" rows="2" placeholder="Optional notes..."></textarea>
                     </div>
                 </div>
+                <div style="font-size:11px;color:var(--text-muted)">Paid and unpaid come from Payments. After saving, use Mark Paid on the unit when the builder pays.</div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" onclick="closeModal('addUnitModal')">Cancel</button>
@@ -270,13 +364,10 @@ ob_start();
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
             </button>
         </div>
-        <form method="POST" action="<?= APP_URL ?>/admin/builders/units" id="editUnitForm">
+        <form method="POST" action="<?= $formAction ?>" id="editUnitForm">
             <?= Security::csrfField() ?>
-            <input type="hidden" name="form_action"  value="edit">
-            <input type="hidden" name="unit_id"      id="editUnitId">
-            <input type="hidden" name="f_builder_id" value="<?= $fBuilderId ?>">
-            <input type="hidden" name="f_project_id" value="<?= $fProjectId ?>">
-            <input type="hidden" name="f_status"     value="<?= Security::e($fStatus) ?>">
+            <input type="hidden" name="form_action" value="edit">
+            <input type="hidden" name="unit_id">
             <div class="modal-body" id="editUnitBody"></div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" onclick="closeModal('editUnitModal')">Cancel</button>
@@ -286,59 +377,132 @@ ob_start();
     </div>
 </div>
 
+<!-- Mark Paid Modal -->
+<div class="modal-overlay" id="payUnitModal">
+    <div class="modal" style="max-width:500px;width:96%">
+        <div class="modal-header">
+            <h3>Mark Paid</h3>
+            <button class="modal-close" onclick="closeModal('payUnitModal')">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+        </div>
+        <form method="POST" action="<?= $formAction ?>" id="payUnitForm">
+            <?= Security::csrfField() ?>
+            <input type="hidden" name="form_action" value="pay">
+            <input type="hidden" name="unit_id">
+            <div class="modal-body">
+                <div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-size:12px">
+                    <div style="font-weight:600;color:var(--navy);font-size:13px" data-pay="name"></div>
+                    <div style="color:var(--text-muted)" data-pay="project"></div>
+                    <div style="display:flex;flex-wrap:wrap;gap:16px;margin-top:6px">
+                        <span>Commission: <strong data-pay="commission"></strong></span>
+                        <span>Already paid: <strong data-pay="paid" style="color:#16a34a"></strong></span>
+                        <span>Balance: <strong data-pay="balance" style="color:#dc2626"></strong></span>
+                    </div>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+                    <div class="form-group">
+                        <label class="form-label">Amount Received (PKR) *</label>
+                        <input type="number" min="1" step="1" name="amount" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Payment Date *</label>
+                        <input type="date" name="payment_date" class="form-input" value="<?= date('Y-m-d') ?>" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Payment Type</label>
+                        <select name="payment_type" class="form-input">
+                            <option value="final">Final</option>
+                            <option value="installment">Installment</option>
+                            <option value="advance">Advance</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Reference / Cheque No.</label>
+                        <input type="text" name="reference" class="form-input" placeholder="e.g. ONLINE, cheque no.">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Notes</label>
+                    <textarea name="notes" class="form-input" rows="2" placeholder="Optional notes..."></textarea>
+                </div>
+                <div style="font-size:11px;color:var(--text-muted)">Saved in Payments as well. Enter less than the balance to record a part payment.</div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('payUnitModal')">Cancel</button>
+                <button type="submit" class="btn btn-primary">Save Payment</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <script>
-// Filter project dropdown by builder
-function filterProjects(builderId, selId) {
-    const sel = document.getElementById(selId);
-    if (!sel) return;
-    for (const opt of sel.options) {
-        if (!opt.value) continue;
-        opt.hidden = builderId && opt.dataset.builder !== String(builderId);
-    }
-    if (sel.options[sel.selectedIndex]?.hidden) sel.value = '';
+function fmtPKR(n) {
+    return 'PKR ' + Math.round(Number(n) || 0).toLocaleString('en-US');
 }
 
-function editUnit(data) {
-    document.getElementById('editUnitId').value = data.id;
-    const src = document.getElementById('addUnitBody');
-    const dst = document.getElementById('editUnitBody');
-    dst.innerHTML = src.innerHTML;
-
-    // Fix the project select id so filterProjects works in edit modal
-    const editBuilderSel = dst.querySelector('[name="builder_id"]');
-    const editProjectSel = dst.querySelector('[name="project_id"]');
-    if (editBuilderSel) {
-        editBuilderSel.id = 'editBuilderSel';
-        editBuilderSel.setAttribute('onchange', "filterProjects(this.value,'editProjectSel')");
+// Shows only the chosen builder's projects in a unit form.
+function unitCascade(form) {
+    const builderId = form.builder_id.value;
+    const project   = form.project_id;
+    for (const opt of project.options) {
+        if (opt.value) opt.hidden = builderId !== '' && opt.dataset.builder !== builderId;
     }
-    if (editProjectSel) editProjectSel.id = 'editProjectSel';
+    if (project.selectedOptions[0] && project.selectedOptions[0].hidden) project.value = '';
+}
 
-    const fields = {
-        builder_id: data.builder_id, project_id: data.project_id,
-        unit_number: data.unit_number, block_number: data.block_number || '',
-        category: data.category || '', plot_size: data.plot_size || '',
-        total_cost: data.total_cost, down_payment: data.down_payment,
-        commission_amount: data.commission_amount,
-        commission_status: data.commission_status,
-        notes: data.notes || ''
+function editUnit(u) {
+    const form = document.getElementById('editUnitForm');
+    const body = document.getElementById('editUnitBody');
+    body.innerHTML = document.getElementById('addUnitBody').innerHTML;
+    form.unit_id.value = u.id;
+    const values = {
+        builder_id: u.builder_id, project_id: u.project_id,
+        unit_number: u.unit_number, block_number: u.block_number || '',
+        category: u.category || '', plot_size: u.plot_size || '',
+        total_cost: u.total_cost, down_payment: u.down_payment,
+        commission_amount: u.commission_amount, maturity_status: u.maturity_status,
+        notes: u.notes || ''
     };
-    for (const [key, val] of Object.entries(fields)) {
-        const el = dst.querySelector('[name="' + key + '"]');
-        if (!el) continue;
-        if (el.tagName === 'SELECT') {
-            for (const opt of el.options) opt.selected = (String(opt.value) === String(val));
-        } else { el.value = val ?? ''; }
+    for (const [name, val] of Object.entries(values)) {
+        const el = body.querySelector('[name="' + name + '"]');
+        if (el) el.value = val ?? '';
     }
-    // Show only projects for this builder
-    filterProjects(data.builder_id, 'editProjectSel');
+    unitCascade(form);
     openModal('editUnitModal');
 }
+
+function openPayModal(u) {
+    const form = document.getElementById('payUnitForm');
+    const show = (key, text) => { form.querySelector('[data-pay="' + key + '"]').textContent = text; };
+    form.reset();
+    form.unit_id.value = u.id;
+    show('name', 'Unit ' + u.unit_number + (u.block_number ? ' · Block ' + u.block_number : ''));
+    show('project', u.builder_name + ' · ' + u.project_name);
+    show('commission', fmtPKR(u.commission));
+    show('paid', fmtPKR(u.paid));
+    show('balance', fmtPKR(u.balance));
+    form.amount.value = Math.round(u.balance);
+    openModal('payUnitModal');
+}
+
+unitCascade(document.getElementById('addUnitForm'));
 </script>
 
 <style>
+.units-table td:not(:first-child) { white-space:nowrap; }
+.unit-toggle {
+    display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:12px;
+    font-size:11px;font-weight:600;font-family:inherit;border:1px solid transparent;cursor:pointer;
+}
+.unit-toggle:hover { border-color:currentColor; }
+.unit-toggle svg { width:11px;height:11px;opacity:.6; }
 @media print {
-    .filter-bar, form[method="GET"], .modal-overlay, .page-header-actions { display: none !important; }
+    @page { size: A4 landscape; }
+    .filter-bar, form[method="GET"], .modal-overlay, .page-header-actions, .alert { display: none !important; }
     .data-table td:last-child, .data-table th:last-child { display: none !important; }
+    .unit-toggle svg { display: none; }
     body::before {
         content: "HK Builders & Developers  -  Units Report  -  <?= date('d M Y') ?>";
         display: block; font-size: 12px; font-weight: 600; color: #002147;

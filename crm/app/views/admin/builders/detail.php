@@ -7,9 +7,16 @@ $pkr        = fn($v) => 'PKR ' . number_format((float)$v, 0);
 
 $statusLabels = ['active' => 'Active', 'completed' => 'Completed', 'on_hold' => 'On Hold'];
 $typeLabels   = ['advance' => 'Advance', 'installment' => 'Installment', 'final' => 'Final', 'other' => 'Other'];
+$payLabels    = ['paid' => 'Paid', 'partial' => 'Partial', 'unpaid' => 'Unpaid'];
+$payColors    = [
+    'paid'    => ['rgba(34,197,94,.12)',  '#16a34a'],
+    'partial' => ['rgba(245,158,11,.14)', '#b45309'],
+    'unpaid'  => ['rgba(220,38,38,.10)',  '#dc2626'],
+];
 
-$totalProjectValue = array_sum(array_column($projects, 'total_value'));
-$totalPaid         = array_sum(array_column($payments, 'amount'));
+$totalCommission = array_sum(array_column($units, 'commission_amount'));
+$totalPaid       = array_sum(array_column($payments, 'amount'));
+$unpaid          = max(0, $totalCommission - $totalPaid);
 
 ob_start();
 ?>
@@ -35,7 +42,7 @@ ob_start();
 </div>
 
 <!-- Builder info card -->
-<div class="card" style="margin-bottom:24px">
+<div class="card" style="margin-bottom:16px;padding:20px 22px">
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:20px">
         <div>
             <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Contact Person</div>
@@ -50,12 +57,8 @@ ob_start();
             <div style="font-weight:600"><?= Security::e($builderRow['email'] ?? '-') ?></div>
         </div>
         <div>
-            <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Projects</div>
-            <div style="font-weight:700;font-size:18px;color:#6366f1"><?= count($projects) ?></div>
-        </div>
-        <div>
-            <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Total Paid</div>
-            <div style="font-weight:700;font-size:18px;color:var(--gold)"><?= $pkr($totalPaid) ?></div>
+            <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Projects / Units</div>
+            <div style="font-weight:700;font-size:18px;color:#6366f1"><?= count($projects) ?> <span style="color:var(--text-muted);font-weight:400">/</span> <span style="color:#8b5cf6"><?= count($units) ?></span></div>
         </div>
         <div>
             <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Status</div>
@@ -76,6 +79,20 @@ ob_start();
     <?php endif; ?>
 </div>
 
+<!-- Commission summary -->
+<div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:28px">
+    <?php foreach ([
+        ['Total Commission', $totalCommission, 'var(--gold)'],
+        ['Total Paid',       $totalPaid,       '#16a34a'],
+        ['Unpaid',           $unpaid,          '#dc2626'],
+    ] as [$label, $amount, $color]): ?>
+    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:10px 18px;min-width:170px">
+        <div style="font-size:11px;color:var(--text-muted);margin-bottom:3px;text-transform:uppercase;letter-spacing:.5px"><?= $label ?></div>
+        <div style="font-size:17px;font-weight:700;color:<?= $color ?>"><?= $pkr($amount) ?></div>
+    </div>
+    <?php endforeach; ?>
+</div>
+
 <!-- Projects -->
 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
     <h2 style="font-size:16px;font-weight:700;margin:0">Projects</h2>
@@ -85,18 +102,20 @@ ob_start();
 <?php if (empty($projects)): ?>
 <div style="padding:32px;text-align:center;color:var(--text-muted)">No projects yet.</div>
 <?php else: ?>
-<table class="data-table">
+<div style="overflow-x:auto">
+<table class="data-table" style="min-width:760px">
     <thead>
-        <tr><th>Project</th><th>Location</th><th>Plots</th><th>Value</th><th>Paid</th><th>Status</th></tr>
+        <tr><th>Project</th><th>Location</th><th>Units</th><th>Commission</th><th>Paid</th><th>Unpaid</th><th>Status</th></tr>
     </thead>
     <tbody>
-    <?php foreach ($projects as $p): ?>
+    <?php foreach ($projects as $p): $pUnpaid = max(0, (float)$p['total_commission'] - (float)$p['paid_amount']); ?>
     <tr>
         <td style="font-weight:600"><?= Security::e($p['name']) ?></td>
         <td style="color:var(--text-muted)"><?= Security::e($p['location'] ?? '-') ?></td>
-        <td><?= (int)$p['total_plots'] ?: '-' ?></td>
-        <td><?= $p['total_value'] > 0 ? $pkr($p['total_value']) : '-' ?></td>
-        <td style="font-weight:600;color:var(--gold)"><?= $pkr($p['paid_amount'] ?? 0) ?></td>
+        <td style="font-weight:600;color:#8b5cf6"><?= (int)$p['unit_count'] ?></td>
+        <td style="font-weight:600;color:var(--gold);white-space:nowrap"><?= $pkr($p['total_commission']) ?></td>
+        <td style="font-weight:600;color:#16a34a;white-space:nowrap"><?= $pkr($p['paid_amount']) ?></td>
+        <td style="font-weight:600;white-space:nowrap;color:<?= $pUnpaid > 0 ? '#dc2626' : 'var(--text-muted)' ?>"><?= $pkr($pUnpaid) ?></td>
         <td>
             <span style="padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;
                 background:<?= $p['status']==='active' ? 'rgba(34,197,94,.12)' : ($p['status']==='completed' ? 'rgba(59,130,246,.12)' : 'rgba(245,158,11,.12)') ?>;
@@ -108,6 +127,50 @@ ob_start();
     <?php endforeach; ?>
     </tbody>
 </table>
+</div>
+<?php endif; ?>
+</div>
+
+<!-- Units -->
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+    <h2 style="font-size:16px;font-weight:700;margin:0">Units</h2>
+    <a href="<?= APP_URL ?>/admin/builders/units?builder_id=<?= $builderRow['id'] ?>" class="btn btn-sm btn-secondary">Manage Units</a>
+</div>
+<div class="card" style="padding:0;overflow:hidden;margin-bottom:28px">
+<?php if (empty($units)): ?>
+<div style="padding:32px;text-align:center;color:var(--text-muted)">No units recorded.</div>
+<?php else: ?>
+<div style="overflow-x:auto">
+<table class="data-table" style="min-width:860px">
+    <thead>
+        <tr><th>Project</th><th>Unit No.</th><th>Block</th><th>Category / Size</th><th>Commission</th><th>Paid</th><th>Balance</th><th>Maturity</th><th>Status</th></tr>
+    </thead>
+    <tbody>
+    <?php foreach ($units as $u): [$sBg, $sClr] = $payColors[$u['pay_status']]; $isMature = $u['maturity_status'] === 'mature'; ?>
+    <tr>
+        <td style="color:var(--text-muted);font-size:13px"><?= Security::e($u['project_name']) ?></td>
+        <td style="font-weight:600"><?= Security::e($u['unit_number']) ?></td>
+        <td style="color:var(--text-muted)"><?= Security::e($u['block_number'] ?: '-') ?></td>
+        <td style="font-size:12px;color:var(--text-muted)"><?= Security::e(implode(' / ', array_filter([$u['category'], $u['plot_size']])) ?: '-') ?></td>
+        <td style="font-weight:600;color:var(--gold);white-space:nowrap"><?= $pkr($u['commission_amount']) ?></td>
+        <td style="color:#16a34a;white-space:nowrap"><?= $pkr($u['paid_amount']) ?></td>
+        <td style="font-weight:600;white-space:nowrap;color:<?= $u['balance'] > 0 ? '#dc2626' : 'var(--text-muted)' ?>"><?= $pkr($u['balance']) ?></td>
+        <td>
+            <span style="padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;
+                background:<?= $isMature ? 'rgba(34,197,94,.12)' : 'rgba(245,158,11,.14)' ?>;color:<?= $isMature ? '#16a34a' : '#b45309' ?>">
+                <?= $isMature ? 'Mature' : 'Immature' ?>
+            </span>
+        </td>
+        <td>
+            <span style="padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;background:<?= $sBg ?>;color:<?= $sClr ?>">
+                <?= $payLabels[$u['pay_status']] ?>
+            </span>
+        </td>
+    </tr>
+    <?php endforeach; ?>
+    </tbody>
+</table>
+</div>
 <?php endif; ?>
 </div>
 
@@ -121,15 +184,22 @@ ob_start();
 <div style="padding:32px;text-align:center;color:var(--text-muted)">No payments recorded.</div>
 <?php else: ?>
 <div style="overflow-x:auto">
-<table class="data-table" style="min-width:600px">
+<table class="data-table" style="min-width:700px">
     <thead>
-        <tr><th>Date</th><th>Project</th><th>Amount</th><th>Type</th><th>Reference</th><th>Notes</th></tr>
+        <tr><th>Date</th><th>Project</th><th>Unit</th><th>Amount</th><th>Type</th><th>Reference</th><th>Notes</th></tr>
     </thead>
     <tbody>
     <?php foreach ($payments as $p): ?>
     <tr>
         <td style="font-size:12px;color:var(--text-muted);white-space:nowrap"><?= date('d M Y', strtotime($p['payment_date'])) ?></td>
         <td style="color:var(--text-muted)"><?= Security::e($p['project_name'] ?? '-') ?></td>
+        <td style="font-size:13px">
+            <?php if ($p['unit_number'] !== null): ?>
+                <?= Security::e($p['unit_number'] . ($p['block_number'] ? ' (Block ' . $p['block_number'] . ')' : '')) ?>
+            <?php else: ?>
+                <span style="font-size:11px;color:#b45309">Not assigned</span>
+            <?php endif; ?>
+        </td>
         <td style="font-weight:700;color:var(--gold)"><?= $pkr($p['amount']) ?></td>
         <td>
             <span style="padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;background:rgba(99,102,241,.1);color:#6366f1">
