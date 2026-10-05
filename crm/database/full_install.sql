@@ -1,7 +1,8 @@
 -- ============================================================
--- HK Builders CRM — Full Install (Fresh Database)
--- Run this in phpMyAdmin on Hostinger
--- Order: schema → v2 migration → v3 migration → seed data
+-- HK Builders CRM - Full Install (brand-new, empty database only)
+-- Contains: schema → v2 migration → v3 migration → sample data
+-- Afterwards run every file in database/migrations/ in the order
+-- listed in CLAUDE.md (repo root). Never run this on production.
 -- ============================================================
 
 SET FOREIGN_KEY_CHECKS = 0;
@@ -147,7 +148,7 @@ CREATE TABLE IF NOT EXISTS audit_log (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- ============================================================
--- 2. V2 TABLES (Teams, Clients, Salaries, Payments, Expenses, Income)
+-- 2. V2 TABLES (Teams, Clients, Salaries, Payments, Income)
 -- ============================================================
 
 CREATE TABLE IF NOT EXISTS teams (
@@ -232,18 +233,7 @@ CREATE TABLE IF NOT EXISTS client_payments (
     INDEX idx_is_paid (is_paid)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE TABLE IF NOT EXISTS expenses (
-    id           INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    category     ENUM('marketing','office','other') NOT NULL DEFAULT 'other',
-    amount       DECIMAL(12,2) NOT NULL,
-    description  VARCHAR(255)  NULL,
-    expense_date DATE          NOT NULL,
-    created_by   INT UNSIGNED  NOT NULL,
-    created_at   DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE RESTRICT,
-    INDEX idx_category     (category),
-    INDEX idx_expense_date (expense_date)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+-- expenses is created by database/migrations/accounts_tables.sql (the layout the Accounts pages use).
 
 CREATE TABLE IF NOT EXISTS income (
     id            INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -468,7 +458,7 @@ INSERT INTO leads (name, email, phone, address, project, investment_amount,
 (NULL, NULL, '0345-2525250',
  NULL, NULL, NULL,
  NULL, NULL, 1, 1, 'cold',
- 'Phone-only — source unknown.',
+ 'Phone-only, source unknown.',
  NULL, NULL, 1, '2026-06-24 09:00:00'),
 ('Mohsin Raza', 'mohsin.r@hotmail.com', '0300-2626260',
  'Gulshan Block 7, Karachi', 'Falaknaz Hills View', 4000000,
