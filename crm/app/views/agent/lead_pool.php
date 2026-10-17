@@ -32,6 +32,11 @@ ob_start();
             <span class="current"><?= $total ?> unclaimed lead<?= $total !== 1 ? 's' : '' ?> available</span>
         </div>
     </div>
+    <?php if (($_SESSION['user_role'] ?? '') === 'sales_manager' && $total > 0): ?>
+    <div class="page-header-actions">
+        <a href="<?= APP_URL ?>/agent/distribute" class="btn btn-primary">Distribute to My Team</a>
+    </div>
+    <?php endif; ?>
 </div>
 
 <?php if ($total > 0): ?>

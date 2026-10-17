@@ -117,11 +117,12 @@ crm/
   .htaccess               RewriteBase /crm/, everything to index.php?url=..., security headers
   config/config.php       environment detection, DB credentials, APP_URL, timezone
   config/database.php     PDO singleton
-  app/controllers/        AdminController, AgentController, AuthController, AccountsController, BuildersController, CallController
-  app/models/             Lead, User, Team, Client, Notice, Accounts, Builder, ContactLog
+  app/controllers/        AdminController, AgentController, AuthController, AccountsController, BuildersController, CallController, DistributeController
+  app/models/             Lead, User, Team, Client, Notice, Accounts, Builder, ContactLog, LeadDistributor
   app/helpers/            Security, AuditLog, CsvImporter, CallUi (Call button, call popup, Contact History card)
   app/views/admin/        admin pages (accounts/ and builders/ subfolders)
   app/views/agent/        agent and sales manager pages
+  app/views/shared/       pages used by both panels (distribute.php)
   app/views/layouts/      admin.php, agent.php (sidebar, topbar, notifications)
   app/views/auth/         login.php
   css/app.css             the whole CRM design system
@@ -154,6 +155,7 @@ crm/
 | `/admin/builders[/projects, /units, /payments, /detail/{id}, /statement/{id}]` | BuildersController |
 | `/agent/{dashboard, leads, pool, clients, lead/{id}[/convert], claim/{id}, team, team-agent/{id}, followups, notices, password}` | AgentController |
 | `/admin/notif-count`, `/agent/notif-count` | JSON for follow-up notification polling |
+| `/admin/distribute`, `/agent/distribute` | DistributeController: Distribute Leads page (admin: all agents; sales manager: own team) |
 | `/admin/call-log`, `/agent/call-log` | CallController, JSON behind the Call button (`action=start` / `finish`), CSRF token in the `X-CSRF-Token` header |
 
 **Config:** `APP_ENV` is `production` when the host contains `hkbuildersanddevelopers.com`, otherwise `development` (shows PHP errors). That decides the DB credentials and `APP_URL`. Timezone is `Asia/Karachi`, and the PDO session runs at `+05:00`. Never save a PHP file with a UTF-8 BOM: the BOM bytes are printed before any output and break JSON responses (`config.php` and `database.php` had BOMs until 2026-10-18).
@@ -174,6 +176,7 @@ crm/
 
 ## 7. CRM modules
 
+- **Distribute Leads** (`/admin/distribute`, sales managers `/agent/distribute`): **Share Equally** deals unassigned leads one by one (hot first, then oldest) to the ticked agents, so each gets the same number; leftovers go to the agents with the fewest open leads (open = status not closed). Admin can pick any active agent or sales manager (agents ticked by default); a sales manager only the agents in their team. **Assign by Hand**: tick leads, pick an agent. Admin can also tick leads on All Leads and assign or reassign them in bulk. A lead is only taken while still unassigned, so a pool claim at the same moment wins and the lead is skipped. Every assignment adds a timeline entry ("Assigned to X by Y (auto distribute / manual / bulk)") and one audit log row. The pool and claiming stay as before.
 - **Leads:** pool and claiming, assignment, statuses, sources, activity timeline, CSV import (template at `/admin/csv-template`), follow-ups and meetings. Overdue follow-ups show as a page banner, a sidebar badge and a count in the tab title; the browser polls `notif-count`.
 - **Clients:** a lead converts to a client "file" with `file_status` mature/immature (plus a reason) and a booking amount. Agents see their own clients at `/agent/clients`.
 - **Calls** (`contact_logs`): a green **Call** button (`CallUi::button`) on every lead and client (lists, detail pages, follow-ups, pool). Tapping it saves the call (`start`), then the phone dialer opens through the normal `tel:` link. When the agent comes back, a popup asks for the result (answered, no answer, busy, switched off, wrong number), talk time (pre-filled from the time away) and a note (`finish`); the first finish also adds a "Call" entry to the lead timeline. A lead and the client it became share one **Contact History** card (calls, answered, total talk time, last call, every call). Admin **Call Log** at `/admin/calls`: totals, per-agent talk time, every call, filters, print. Agents may call their own leads and clients and unclaimed pool leads; admin may call anyone. The phone number always comes from the record, never from the browser. Talk time from the popup is approximate; the Android app (phase 4) will fill exact durations from the phone's call log (`source = phone_log`, deduplicated by `device_call_id`).
@@ -205,7 +208,7 @@ crm/
   4. `migrations/builder_units.sql`: builder_units.
   5. `migrations/commission_payments_v2.sql`: project, dates, payment source, reference on commission_payments.
   6. `migrations/builder_units_v2.sql`: unit maturity, builder_payments.unit_id, foreign keys, turned hand-marked "paid" units into payments.
-  7. `migrations/contact_logs.sql`: contact_logs (calls with leads and clients, talk time). Added 2026-10-18; **not yet run on production** until the owner confirms.
+  7. `migrations/contact_logs.sql`: contact_logs (calls with leads and clients, talk time). Applied on production 2026-10-18.
 - **Rules for new migrations:** ids are `INT UNSIGNED`, and foreign key columns must match exactly (a mismatch causes errno 150). Use standard SQL that works on MySQL 5.7/8 and MariaDB. Test on a scratch database first, add the file to this list, and give the owner the SQL with "Export a backup first".
 
 ---
@@ -275,12 +278,12 @@ crm/
 - Builders: Units section; payments linked to units; maturity status and filters; commission, paid and unpaid on every builder page and the statement; phone card layout for all Builders tables.
 - `full_install.sql` fixed (it created an outdated `expenses` table) and fresh-install steps verified; this file replaces `crm/SESSION-CONTEXT.md` and `crm/FEATURES.md`.
 - 2026-10-18, phase 1 of the mobile app plan: Call button on every lead and client, call result popup, Contact History card, admin Call Log, agent My Clients page; phone card layout on every CRM table; inline grids collapse on phones; apostrophes no longer break Edit buttons; sales manager's team agent page shows booking and commission again (`booking_amount` key); marking a follow-up done no longer writes an invalid activity type.
-- **Mobile app plan (owner approved 2026-10-18):** 1) calls and talk time (done), 2) lead distribution: Auto Distribute splits unassigned leads equally between active agents (admin: all agents, sales manager: own team), plus manual bulk assign; the pool and claiming stay, 3) agent location every few minutes during working hours while logged in, admin map (OpenStreetMap), 4) Android APK (Capacitor) wrapping the live CRM with background location and call-log sync for exact talk time. The APK is shared directly with agents, not through the Play Store.
+- 2026-10-18, phase 2: Distribute Leads page for admin and sales managers (share equally, assign by hand), bulk assign on All Leads.
+- **Mobile app plan (owner approved 2026-10-18):** 1) calls and talk time (done), 2) lead distribution (done): Auto Distribute splits unassigned leads equally between active agents (admin: all agents, sales manager: own team), plus manual bulk assign; the pool and claiming stay, 3) agent location every few minutes during working hours while logged in, admin map (OpenStreetMap), 4) Android APK (Capacitor) wrapping the live CRM with background location and call-log sync for exact talk time. The APK is shared directly with agents, not through the Play Store.
 
 ---
 
 ## 14. Open items
 
 1. **Security, high priority:** the production database password is committed in `crm/config/config.php`. It was also exposed in the old `crm/SESSION-CONTEXT.md`, which was removed on 2026-10-06 but is still in git history. Move the credentials to an untracked `crm/config/config.local.php` (create it on Hostinger by hand first), then change the database user's password in hPanel.
-2. Run `migrations/contact_logs.sql` on production (then mark it applied in section 8).
-3. Idea: link leads and clients to builder projects (`builder_id`, `project_id`) so a converted client can become a unit automatically.
+2. Idea: link leads and clients to builder projects (`builder_id`, `project_id`) so a converted client can become a unit automatically.

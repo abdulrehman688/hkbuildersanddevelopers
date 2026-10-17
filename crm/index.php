@@ -73,6 +73,14 @@ if ($action === 'call-log' && in_array($section, ['admin', 'agent'], true)) {
     exit;
 }
 
+// Distribute Leads: admin (all agents) or sales manager (own team)
+if ($action === 'distribute' && in_array($section, ['admin', 'agent'], true)) {
+    $section === 'admin' ? Security::requireAdmin() : Security::requireLogin();
+    require_once APP_ROOT . '/app/controllers/DistributeController.php';
+    (new DistributeController())->handle($section);
+    exit;
+}
+
 if ($section === 'admin' && $action === 'accounts') {
     Security::requireAdmin();
     require_once APP_ROOT . '/app/controllers/AccountsController.php';

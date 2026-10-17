@@ -790,6 +790,21 @@ input, select, textarea { font-family: 'Jost', sans-serif; max-width: 100%; }
 .call-pill input:checked + span { background: var(--navy); border-color: var(--navy); color: #fff; }
 .call-pill input:focus-visible + span { outline: 2px solid var(--gold); outline-offset: 2px; }
 
+/* Distribute Leads: agent tick boxes, lead checkboxes, bulk assign bar */
+.dist-agents { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 8px; }
+.dist-agent {
+  display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; cursor: pointer;
+  border: 1px solid var(--border); border-radius: 8px; background: var(--bg-card);
+}
+.dist-agent:has(input:checked) { border-color: var(--gold); background: rgba(201,168,76,0.08); }
+.dist-agent input { margin-top: 3px; width: 16px; height: 16px; accent-color: var(--navy); flex-shrink: 0; }
+.dist-agent b { display: block; font-size: 13px; color: var(--navy); font-weight: 600; }
+.dist-agent small { font-size: 11px; color: var(--text-muted); }
+.lead-pick { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; }
+.lead-pick input { width: 16px; height: 16px; accent-color: var(--navy); flex-shrink: 0; }
+.bulk-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.bulk-bar select { min-width: 180px; }
+
 .btn-sm { padding: 6px 12px; font-size: 11px; }
 .btn-lg { padding: 12px 26px; font-size: 13px; letter-spacing: 1px; }
 

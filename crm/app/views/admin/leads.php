@@ -32,6 +32,9 @@ $total    = $lead->countAll($filters);
 $pages    = (int)ceil($total / $perPage);
 $statuses = $lead->getStatuses();
 
+require_once __DIR__ . '/../../models/User.php';
+$bulkAgents = array_filter((new User())->getAllAgents(), fn($a) => $a['status'] === 'active');
+
 // Build URL helper preserving all filters except page
 function filtersUrl(array $overrides = []): string {
     $base = array_filter([
@@ -58,6 +61,10 @@ ob_start();
     </div>
     <?php unset($_SESSION['success']); ?>
 <?php endif; ?>
+<?php if (!empty($_SESSION['error'])): ?>
+    <div class="alert alert-error"><?= Security::e($_SESSION['error']) ?></div>
+    <?php unset($_SESSION['error']); ?>
+<?php endif; ?>
 
 <div class="page-header">
     <div class="page-header-left">
@@ -68,6 +75,10 @@ ob_start();
         </div>
     </div>
     <div class="page-header-actions">
+        <a href="<?= APP_URL ?>/admin/distribute" class="btn btn-secondary">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5"/></svg>
+            Distribute
+        </a>
         <a href="<?= APP_URL ?>/admin/leads?action=import" class="btn btn-secondary">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/></svg>
             Import CSV
@@ -159,6 +170,24 @@ ob_start();
     <?php endif; ?>
 </div>
 
+<!-- Bulk assign: tick leads below (inputs use form="bulkForm") -->
+<?php if ($leads && $bulkAgents): ?>
+<form method="POST" action="<?= APP_URL ?>/admin/distribute" id="bulkForm" class="card bulk-bar" style="padding:10px 14px;margin-bottom:12px">
+    <?= Security::csrfField() ?>
+    <input type="hidden" name="action" value="assign">
+    <input type="hidden" name="back" value="leads">
+    <label class="lead-pick" style="font-weight:600"><input type="checkbox" id="pickAll"> Select page</label>
+    <span id="pickCount" style="font-size:12px;color:var(--text-muted)">0 selected</span>
+    <select name="agent_id" class="filter-input" required>
+        <option value="">Assign to…</option>
+        <?php foreach ($bulkAgents as $a): ?>
+            <option value="<?= (int)$a['id'] ?>"><?= Security::e($a['name']) ?></option>
+        <?php endforeach; ?>
+    </select>
+    <button type="submit" class="btn btn-primary btn-sm">Assign Selected</button>
+</form>
+<?php endif; ?>
+
 <!-- Table -->
 <div class="table-wrapper">
     <table class="data-table table-cards">
@@ -180,7 +209,10 @@ ob_start();
             <tr onclick="window.location='<?= APP_URL ?>/admin/lead/<?= (int)$row['id'] ?>'">
                 <td class="tc-hide" style="color:var(--text-muted);font-size:11px"><?= $offset + $i + 1 ?></td>
                 <td class="tc-title">
-                    <div class="lead-name"><?= Security::e($row['name'] ?? 'Unknown') ?></div>
+                    <label class="lead-pick" onclick="event.stopPropagation()">
+                        <input type="checkbox" name="lead_ids[]" value="<?= (int)$row['id'] ?>" form="bulkForm" class="pick">
+                        <span class="lead-name"><?= Security::e($row['name'] ?? 'Unknown') ?></span>
+                    </label>
                     <?php if ($row['email']): ?>
                         <div class="lead-sub"><?= Security::e($row['email']) ?></div>
                     <?php endif; ?>
@@ -269,6 +301,33 @@ ob_start();
     </div>
     <?php endif; ?>
 </div>
+
+<?php if ($leads && $bulkAgents): ?>
+<script>
+(function() {
+    var form  = document.getElementById('bulkForm');
+    var picks = document.querySelectorAll('.pick');
+    var all   = document.getElementById('pickAll');
+    var count = document.getElementById('pickCount');
+    function update() {
+        var n = document.querySelectorAll('.pick:checked').length;
+        count.textContent = n + ' selected';
+        all.checked = n > 0 && n === picks.length;
+    }
+    all.addEventListener('change', function() {
+        picks.forEach(function(p) { p.checked = all.checked; });
+        update();
+    });
+    picks.forEach(function(p) { p.addEventListener('change', update); });
+    form.addEventListener('submit', function(e) {
+        var n = document.querySelectorAll('.pick:checked').length;
+        if (!n) { e.preventDefault(); alert('Tick at least one lead.'); return; }
+        var agent = form.agent_id.options[form.agent_id.selectedIndex].text;
+        if (!confirm('Assign ' + n + ' lead' + (n === 1 ? '' : 's') + ' to ' + agent + '?')) e.preventDefault();
+    });
+})();
+</script>
+<?php endif; ?>
 
 <?php
 $content = ob_get_clean();
