@@ -2,6 +2,7 @@
 Security::requireAdmin();
 require_once __DIR__ . '/../../models/Client.php';
 require_once __DIR__ . '/../../models/User.php';
+require_once __DIR__ . '/../../helpers/CallUi.php';
 
 $clientModel = new Client();
 $userModel   = new User();
@@ -86,7 +87,7 @@ ob_start();
 
 <!-- Table -->
 <div class="table-wrapper">
-    <table class="data-table">
+    <table class="data-table table-cards">
         <thead>
             <tr>
                 <th>Client</th>
@@ -102,38 +103,39 @@ ob_start();
         <tbody>
         <?php foreach ($clients as $c): ?>
             <tr>
-                <td>
+                <td class="tc-title">
                     <div style="font-weight:500;color:var(--navy)"><?= Security::e($c['name'] ?? 'Unknown') ?></div>
                     <?php if ($c['contact_no']): ?>
                         <div style="font-size:11px;color:var(--text-muted)"><?= Security::e($c['contact_no']) ?></div>
                     <?php endif; ?>
                 </td>
-                <td>
-                    <div style="font-size:13px;font-weight:500"><?= $c['project'] ? Security::e($c['project']) : '—' ?></div>
+                <td data-label="Project">
+                    <div style="font-size:13px;font-weight:500"><?= $c['project'] ? Security::e($c['project']) : '-' ?></div>
                     <?php if ($c['category']): ?>
                         <div style="font-size:11px;color:var(--text-muted)"><?= Security::e($c['category']) ?></div>
                     <?php endif; ?>
                 </td>
-                <td style="font-size:13px">
-                    <?= $c['unit_no'] ? Security::e($c['unit_no']) : '—' ?>
+                <td data-label="Unit / Block" style="font-size:13px">
+                    <?= $c['unit_no'] ? Security::e($c['unit_no']) : '-' ?>
                     <?php if ($c['block']): ?>
                         <div style="font-size:11px;color:var(--text-muted)"><?= Security::e($c['block']) ?></div>
                     <?php endif; ?>
                 </td>
-                <td style="font-weight:600;color:var(--navy)">
-                    <?= $c['booking_amount'] ? 'Rs. ' . number_format((float)$c['booking_amount']) : '—' ?>
+                <td data-label="Booking Amount" style="font-weight:600;color:var(--navy)">
+                    <?= $c['booking_amount'] ? 'Rs. ' . number_format((float)$c['booking_amount']) : '-' ?>
                 </td>
-                <td>
+                <td data-label="File Status">
                     <?php if ($c['file_status'] === 'mature'): ?>
                         <span class="status-pill" style="background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0">Mature</span>
                     <?php else: ?>
                         <span class="status-pill" style="background:#fff8e8;color:#92600a;border:1px solid #f0e2bd">Immature</span>
                     <?php endif; ?>
                 </td>
-                <td style="font-size:13px;color:var(--text-muted)"><?= $c['agent_name'] ? Security::e($c['agent_name']) : '—' ?></td>
-                <td style="font-size:12px;color:var(--text-muted)"><?= date('d M Y', strtotime($c['created_at'])) ?></td>
-                <td>
+                <td data-label="Agent" style="font-size:13px;color:var(--text-muted)"><?= $c['agent_name'] ? Security::e($c['agent_name']) : '-' ?></td>
+                <td data-label="Date" style="font-size:12px;color:var(--text-muted)"><?= date('d M Y', strtotime($c['created_at'])) ?></td>
+                <td class="tc-actions">
                     <div style="display:flex;gap:6px">
+                        <?= CallUi::button($c['contact_no'], 0, (int)$c['id']) ?>
                         <a href="<?= APP_URL ?>/admin/client/<?= (int)$c['id'] ?>" class="btn btn-secondary btn-sm">View</a>
                         <?php if ($c['lead_id']): ?>
                             <a href="<?= APP_URL ?>/admin/lead/<?= (int)$c['lead_id'] ?>" class="btn btn-secondary btn-sm">Lead</a>

@@ -1,6 +1,6 @@
 <?php
 // ============================================================
-// Front Controller — all requests pass through here
+// Front Controller: all requests pass through here
 // NOTE: On production (Hostinger), this file sits at crm/ root.
 //       On local (XAMPP), it sits at public/ with ../ paths.
 //       The APP_ROOT constant handles both cases.
@@ -48,7 +48,7 @@ if ($section === '') {
     exit;
 }
 
-// Notification count — AJAX endpoint, no layout, works for both admin and agent
+// Notification count: AJAX endpoint, no layout, works for both admin and agent
 if ($action === 'notif-count' && in_array($section, ['admin', 'agent'], true)) {
     Security::requireLogin();
     header('Content-Type: application/json');
@@ -62,6 +62,14 @@ if ($action === 'notif-count' && in_array($section, ['admin', 'agent'], true)) {
     } catch (\Throwable $e) {
         echo json_encode(['overdue' => 0, 'soon' => 0]);
     }
+    exit;
+}
+
+// Call button: save the call and its outcome (JSON, works for both admin and agent)
+if ($action === 'call-log' && in_array($section, ['admin', 'agent'], true)) {
+    Security::requireLogin();
+    require_once APP_ROOT . '/app/controllers/CallController.php';
+    (new CallController())->handle();
     exit;
 }
 
@@ -92,6 +100,7 @@ if ($section === 'admin') {
         'clients'      => $ctrl->clients(),
         'client'       => $ctrl->clientDetail((int)$param),
         'followups'    => $ctrl->followups(),
+        'calls'        => $ctrl->calls(),
         'notices'      => $ctrl->notices(),
         'reports'      => $ctrl->reports(),
         'csv-template' => $ctrl->downloadCsvTemplate(),
@@ -109,6 +118,7 @@ if ($section === 'agent') {
     match($action) {
         'leads'        => $ctrl->myLeads(),
         'pool'         => $ctrl->leadPool(),
+        'clients'      => $ctrl->myClients(),
         'lead'         => $sub === 'convert' ? $ctrl->convertClient((int)$param) : $ctrl->leadDetail((int)$param),
         'claim'        => $ctrl->claimLead((int)$param),
         'team'         => $ctrl->myTeam(),
@@ -122,4 +132,4 @@ if ($section === 'agent') {
 }
 
 http_response_code(404);
-echo '<h1>404 — Page not found</h1>';
+echo '<h1>404: Page not found</h1>';

@@ -66,17 +66,18 @@ Open the XAMPP Control Panel and start **Apache** and **MySQL**. Then pick one:
 cd C:\xampp\htdocs\hkbuildersanddevelopers\crm\database
 $mysql = "C:\xampp\mysql\bin\mysql.exe"
 & $mysql -u root -e "CREATE DATABASE crm_system CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"
-foreach ($f in "full_install.sql", "migrations/accounts_tables.sql", "migrations/builders_tables.sql", "migrations/builder_units.sql", "migrations/commission_payments_v2.sql", "migrations/builder_units_v2.sql") {
+foreach ($f in "full_install.sql", "migrations/accounts_tables.sql", "migrations/builders_tables.sql", "migrations/builder_units.sql", "migrations/commission_payments_v2.sql", "migrations/builder_units_v2.sql", "migrations/contact_logs.sql") {
     & $mysql -u root crm_system -e "source $f"
 }
 ```
-This creates 22 tables plus sample users and leads. The sample admin login is in the "Done! Login" comment at the end of `crm/database/full_install.sql`.
+This creates 23 tables plus sample users and leads (no sample clients). The sample admin login is in the "Done! Login" comment at the end of `crm/database/full_install.sql`.
 
 ### 3.4 Run it
 - **One-time CRM junction (required).** `crm/.htaccess` uses `RewriteBase /crm/` (correct for production), so locally `/crm` must also exist inside htdocs. Without it every CRM page except real files returns 404. No admin rights needed:
   ```powershell
   New-Item -ItemType Junction -Path C:\xampp\htdocs\crm -Target C:\xampp\htdocs\hkbuildersanddevelopers\crm
   ```
+  Alternative (used on the second laptop): an `Alias /crm "C:/xampp/htdocs/hkbuildersanddevelopers/crm"` block with `DirectoryIndex index.php` at the end of `C:\xampp\apache\conf\extra\httpd-xampp.conf`. The `DirectoryIndex` line also fixes the 403 on the bare `/crm` folder URL, which the root `.htaccess` (`DirectoryIndex index.html`) otherwise causes.
 - **CRM:** http://localhost/hkbuildersanddevelopers/crm. `crm/config/config.php` detects localhost and uses `crm_system` / `root` / no password.
 - **Website:** XAMPP can't show it, because the root `.htaccess` redirects every request to `https://www.`. From the repo root run `npx http-server -c-1 -p 8123` and open http://localhost:8123.
 
@@ -116,15 +117,15 @@ crm/
   .htaccess               RewriteBase /crm/, everything to index.php?url=..., security headers
   config/config.php       environment detection, DB credentials, APP_URL, timezone
   config/database.php     PDO singleton
-  app/controllers/        AdminController, AgentController, AuthController, AccountsController, BuildersController
-  app/models/             Lead, User, Team, Client, Notice, Accounts, Builder
-  app/helpers/            Security, AuditLog, CsvImporter
+  app/controllers/        AdminController, AgentController, AuthController, AccountsController, BuildersController, CallController
+  app/models/             Lead, User, Team, Client, Notice, Accounts, Builder, ContactLog
+  app/helpers/            Security, AuditLog, CsvImporter, CallUi (Call button, call popup, Contact History card)
   app/views/admin/        admin pages (accounts/ and builders/ subfolders)
   app/views/agent/        agent and sales manager pages
   app/views/layouts/      admin.php, agent.php (sidebar, topbar, notifications)
   app/views/auth/         login.php
   css/app.css             the whole CRM design system
-  js/app.js               sidebar, openModal/closeModal
+  js/app.js               sidebar, openModal/closeModal, Call button + call popup
   database/               full_install.sql + migrations/ (web access denied)
   docs/                   older HTML planning docs (work-plan, project-insights)
 ```
@@ -148,13 +149,14 @@ crm/
 | URL | Handler |
 |---|---|
 | `/login`, `/logout` | AuthController |
-| `/admin/{dashboard, leads, lead/{id}, agents, agent/{id}, teams, clients, client/{id}, followups, notices, reports, csv-template, password, audit}` | AdminController |
+| `/admin/{dashboard, leads, lead/{id}, agents, agent/{id}, teams, clients, client/{id}, followups, calls, notices, reports, csv-template, password, audit}` | AdminController |
 | `/admin/accounts[/commission, /commission-ajax, /expenses, /salaries]` | AccountsController |
 | `/admin/builders[/projects, /units, /payments, /detail/{id}, /statement/{id}]` | BuildersController |
-| `/agent/{dashboard, leads, pool, lead/{id}[/convert], claim/{id}, team, team-agent/{id}, followups, notices, password}` | AgentController |
+| `/agent/{dashboard, leads, pool, clients, lead/{id}[/convert], claim/{id}, team, team-agent/{id}, followups, notices, password}` | AgentController |
 | `/admin/notif-count`, `/agent/notif-count` | JSON for follow-up notification polling |
+| `/admin/call-log`, `/agent/call-log` | CallController, JSON behind the Call button (`action=start` / `finish`), CSRF token in the `X-CSRF-Token` header |
 
-**Config:** `APP_ENV` is `production` when the host contains `hkbuildersanddevelopers.com`, otherwise `development` (shows PHP errors). That decides the DB credentials and `APP_URL`. Timezone is `Asia/Karachi`, and the PDO session runs at `+05:00`. `config.php` and `database.php` start with a UTF-8 BOM; it's harmless because servers buffer output.
+**Config:** `APP_ENV` is `production` when the host contains `hkbuildersanddevelopers.com`, otherwise `development` (shows PHP errors). That decides the DB credentials and `APP_URL`. Timezone is `Asia/Karachi`, and the PDO session runs at `+05:00`. Never save a PHP file with a UTF-8 BOM: the BOM bytes are printed before any output and break JSON responses (`config.php` and `database.php` had BOMs until 2026-10-18).
 
 **PDO:** exceptions on, real prepared statements (`ATTR_EMULATE_PREPARES` false), so a named placeholder can't be reused within one query.
 
@@ -173,7 +175,8 @@ crm/
 ## 7. CRM modules
 
 - **Leads:** pool and claiming, assignment, statuses, sources, activity timeline, CSV import (template at `/admin/csv-template`), follow-ups and meetings. Overdue follow-ups show as a page banner, a sidebar badge and a count in the tab title; the browser polls `notif-count`.
-- **Clients:** a lead converts to a client "file" with `file_status` mature/immature (plus a reason) and a booking amount.
+- **Clients:** a lead converts to a client "file" with `file_status` mature/immature (plus a reason) and a booking amount. Agents see their own clients at `/agent/clients`.
+- **Calls** (`contact_logs`): a green **Call** button (`CallUi::button`) on every lead and client (lists, detail pages, follow-ups, pool). Tapping it saves the call (`start`), then the phone dialer opens through the normal `tel:` link. When the agent comes back, a popup asks for the result (answered, no answer, busy, switched off, wrong number), talk time (pre-filled from the time away) and a note (`finish`); the first finish also adds a "Call" entry to the lead timeline. A lead and the client it became share one **Contact History** card (calls, answered, total talk time, last call, every call). Admin **Call Log** at `/admin/calls`: totals, per-agent talk time, every call, filters, print. Agents may call their own leads and clients and unclaimed pool leads; admin may call anyone. The phone number always comes from the record, never from the browser. Talk time from the popup is approximate; the Android app (phase 4) will fill exact durations from the phone's call log (`source = phone_log`, deduplicated by `device_call_id`).
 - **Agents and teams:** agent detail page with performance, yearly history and print; teams led by sales managers.
 - **Notices:** announcements and tasks with completions; activity feed at `/admin/notices?tab=activity`.
 - **Reports:** agent performance leaderboard, CSV export, print. **Audit log** at `/admin/audit`.
@@ -194,7 +197,7 @@ crm/
 ## 8. Database
 
 - **Local:** `crm_system` (user `root`, no password). **Production:** `u813506845_crm` on Hostinger (MariaDB-style errors such as errno 150). Credentials live in `crm/config/config.php`; never copy them anywhere else.
-- **22 tables:** users, teams, leads, lead_sources, lead_statuses, lead_activities, follow_ups, import_batches, clients, client_payments, notices, notice_completions, audit_log, commission_payments, commission_pending_reason, expenses, builders, builder_projects, builder_units, builder_payments, plus legacy `salaries` and `income` (the code doesn't use them).
+- **23 tables:** users, teams, leads, lead_sources, lead_statuses, lead_activities, follow_ups, import_batches, clients, client_payments, notices, notice_completions, audit_log, commission_payments, commission_pending_reason, expenses, builders, builder_projects, builder_units, builder_payments, contact_logs, plus legacy `salaries` and `income` (the code doesn't use them).
 - **Migration history, in order** (all applied on production as of 2026-09-30):
   1. `full_install.sql`: schema + v2 + v3 + sample data. Fresh databases only; the old `schema.sql`, `seed.sql`, `migration_v2*.sql` and `migration_v3.sql` are history it already contains.
   2. `migrations/accounts_tables.sql`: commission_payments, commission_pending_reason, expenses.
@@ -202,6 +205,7 @@ crm/
   4. `migrations/builder_units.sql`: builder_units.
   5. `migrations/commission_payments_v2.sql`: project, dates, payment source, reference on commission_payments.
   6. `migrations/builder_units_v2.sql`: unit maturity, builder_payments.unit_id, foreign keys, turned hand-marked "paid" units into payments.
+  7. `migrations/contact_logs.sql`: contact_logs (calls with leads and clients, talk time). Added 2026-10-18; **not yet run on production** until the owner confirms.
 - **Rules for new migrations:** ids are `INT UNSIGNED`, and foreign key columns must match exactly (a mismatch causes errno 150). Use standard SQL that works on MySQL 5.7/8 and MariaDB. Test on a scratch database first, add the file to this list, and give the owner the SQL with "Export a backup first".
 
 ---

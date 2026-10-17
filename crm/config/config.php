@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 // ============================================================
 // HK Builders CRM â€” Configuration
 // LOCAL:      http://localhost/hkbuildersanddevelopers/crm  (development)

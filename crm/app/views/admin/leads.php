@@ -1,6 +1,7 @@
 <?php
 Security::requireAdmin();
 require_once __DIR__ . '/../../models/Lead.php';
+require_once __DIR__ . '/../../helpers/CallUi.php';
 
 $lead = new Lead();
 
@@ -160,7 +161,7 @@ ob_start();
 
 <!-- Table -->
 <div class="table-wrapper">
-    <table class="data-table">
+    <table class="data-table table-cards">
         <thead>
             <tr>
                 <th>#</th>
@@ -177,9 +178,9 @@ ob_start();
         <tbody>
         <?php foreach ($leads as $i => $row): ?>
             <tr onclick="window.location='<?= APP_URL ?>/admin/lead/<?= (int)$row['id'] ?>'">
-                <td style="color:var(--text-muted);font-size:11px"><?= $offset + $i + 1 ?></td>
-                <td>
-                    <div class="lead-name"><?= Security::e($row['name']) ?></div>
+                <td class="tc-hide" style="color:var(--text-muted);font-size:11px"><?= $offset + $i + 1 ?></td>
+                <td class="tc-title">
+                    <div class="lead-name"><?= Security::e($row['name'] ?? 'Unknown') ?></div>
                     <?php if ($row['email']): ?>
                         <div class="lead-sub"><?= Security::e($row['email']) ?></div>
                     <?php endif; ?>
@@ -187,31 +188,34 @@ ob_start();
                         <div class="lead-sub"><?= Security::e($row['company']) ?></div>
                     <?php endif; ?>
                 </td>
-                <td><?= Security::e($row['phone'] ?? '—') ?></td>
-                <td style="font-size:12px;color:var(--text-muted)"><?= Security::e($row['source_name'] ?? '—') ?></td>
-                <td>
+                <td data-label="Phone" style="white-space:nowrap"><?= Security::e($row['phone'] ?? '-') ?></td>
+                <td data-label="Source" style="font-size:12px;color:var(--text-muted)"><?= Security::e($row['source_name'] ?? '-') ?></td>
+                <td data-label="Priority">
                     <span class="badge badge-<?= Security::e($row['priority']) ?>">
                         <span class="badge-dot"></span>
                         <?= ucfirst(Security::e($row['priority'])) ?>
                     </span>
                 </td>
-                <td>
+                <td data-label="Status">
                     <span class="status-pill" style="background:<?= Security::e($row['status_color']) ?>22;color:<?= Security::e($row['status_color']) ?>;border:1px solid <?= Security::e($row['status_color']) ?>44">
                         <?= Security::e($row['status_name']) ?>
                     </span>
                 </td>
-                <td style="font-size:12px">
+                <td data-label="Assigned To" style="font-size:12px">
                     <?php if ($row['agent_name']): ?>
                         <span class="agent-chip"><?= Security::e($row['agent_name']) ?></span>
                     <?php else: ?>
                         <span style="color:var(--text-muted)">Unassigned</span>
                     <?php endif; ?>
                 </td>
-                <td style="color:var(--text-muted);font-size:12px;white-space:nowrap">
+                <td data-label="Date Added" style="color:var(--text-muted);font-size:12px;white-space:nowrap">
                     <?= date('d M Y', strtotime($row['created_at'])) ?>
                 </td>
-                <td>
-                    <a href="<?= APP_URL ?>/admin/lead/<?= (int)$row['id'] ?>" onclick="event.stopPropagation()">View</a>
+                <td class="tc-actions">
+                    <div style="display:flex;gap:6px">
+                        <?= CallUi::button($row['phone'], (int)$row['id']) ?>
+                        <a href="<?= APP_URL ?>/admin/lead/<?= (int)$row['id'] ?>" class="btn btn-secondary btn-sm" onclick="event.stopPropagation()">View</a>
+                    </div>
                 </td>
             </tr>
         <?php endforeach; ?>

@@ -765,6 +765,20 @@ input, select, textarea { font-family: 'Jost', sans-serif; max-width: 100%; }
 .btn-danger { background: transparent; color: #ef4444; border-color: #fecaca; }
 .btn-danger:hover { background: #fef2f2; }
 
+.btn-call { background: #16a34a; color: #fff; border-color: #16a34a; }
+.btn-call:hover { background: #15803d; border-color: #15803d; color: #fff; }
+
+/* Call result pills in the call popup */
+.call-pills { display: flex; flex-wrap: wrap; gap: 8px; }
+.call-pill { position: relative; cursor: pointer; }
+.call-pill input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.call-pill span {
+  display: inline-block; padding: 9px 14px; border: 1px solid var(--border);
+  border-radius: 20px; font-size: 13px; color: var(--text); background: var(--bg-card);
+}
+.call-pill input:checked + span { background: var(--navy); border-color: var(--navy); color: #fff; }
+.call-pill input:focus-visible + span { outline: 2px solid var(--gold); outline-offset: 2px; }
+
 .btn-sm { padding: 6px 12px; font-size: 11px; }
 .btn-lg { padding: 12px 26px; font-size: 13px; letter-spacing: 1px; }
 
@@ -1744,6 +1758,8 @@ input, select, textarea { font-family: 'Jost', sans-serif; max-width: 100%; }
   .table-cards .tc-sub     { grid-column: 1 / -1; order: -1; margin-top: -6px; }
   .table-cards .tc-full    { grid-column: 1 / -1; }
   .table-cards .tc-actions { grid-column: 1 / -1; order: 1; }
+  .table-cards .tc-hide    { display: none; }
+  .table-cards .empty-row  { grid-column: 1 / -1; text-align: center; padding: 24px 0 !important; }
   .table-cards .tc-actions > div { flex-wrap: wrap; }
   .table-cards .tc-actions > div > * { flex: 1; }
   .table-cards .tc-actions .btn { width: 100%; justify-content: center; padding: 8px 10px; }

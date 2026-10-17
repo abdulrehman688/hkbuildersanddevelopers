@@ -1,6 +1,7 @@
 <?php
 Security::requireLogin();
 require_once __DIR__ . '/../../models/Lead.php';
+require_once __DIR__ . '/../../helpers/CallUi.php';
 
 $leadModel = new Lead();
 $page      = max(1, (int)($_GET['page'] ?? 1));
@@ -41,29 +42,32 @@ ob_start();
 <?php endif; ?>
 
 <div class="table-wrapper">
-    <table class="data-table">
+    <table class="data-table table-cards">
         <thead>
             <tr><th>Lead</th><th>Phone</th><th>Source</th><th>Priority</th><th>Added</th><th></th></tr>
         </thead>
         <tbody>
         <?php foreach ($leads as $row): ?>
             <tr>
-                <td>
-                    <div class="lead-name"><?= Security::e($row['name']) ?></div>
+                <td class="tc-title">
+                    <div class="lead-name"><?= Security::e($row['name'] ?? 'Unknown') ?></div>
                     <?php if ($row['company']): ?><div class="lead-sub"><?= Security::e($row['company']) ?></div><?php endif; ?>
                 </td>
-                <td><?= Security::e($row['phone'] ?? '—') ?></td>
-                <td style="font-size:12px;color:var(--text-muted)"><?= Security::e($row['source_name'] ?? '—') ?></td>
-                <td><span class="badge badge-<?= Security::e($row['priority']) ?>"><span class="badge-dot"></span><?= ucfirst(Security::e($row['priority'])) ?></span></td>
-                <td style="color:var(--text-muted);font-size:12px"><?= date('d M Y', strtotime($row['created_at'])) ?></td>
-                <td>
-                    <form method="POST" action="<?= APP_URL ?>/agent/claim/<?= (int)$row['id'] ?>">
-                        <?= Security::csrfField() ?>
-                        <button type="submit" class="btn btn-gold btn-sm"
-                            onclick="return confirm('Claim this lead? It will be assigned to you exclusively.')">
-                            <span>Claim Lead</span>
-                        </button>
-                    </form>
+                <td data-label="Phone" style="white-space:nowrap"><?= Security::e($row['phone'] ?? '-') ?></td>
+                <td data-label="Source" style="font-size:12px;color:var(--text-muted)"><?= Security::e($row['source_name'] ?? '-') ?></td>
+                <td data-label="Priority"><span class="badge badge-<?= Security::e($row['priority']) ?>"><span class="badge-dot"></span><?= ucfirst(Security::e($row['priority'])) ?></span></td>
+                <td data-label="Added" style="color:var(--text-muted);font-size:12px"><?= date('d M Y', strtotime($row['created_at'])) ?></td>
+                <td class="tc-actions">
+                    <div style="display:flex;gap:6px">
+                        <?= CallUi::button($row['phone'], (int)$row['id']) ?>
+                        <form method="POST" action="<?= APP_URL ?>/agent/claim/<?= (int)$row['id'] ?>">
+                            <?= Security::csrfField() ?>
+                            <button type="submit" class="btn btn-gold btn-sm"
+                                onclick="return confirm('Claim this lead? It will be assigned to you exclusively.')">
+                                <span>Claim Lead</span>
+                            </button>
+                        </form>
+                    </div>
                 </td>
             </tr>
         <?php endforeach; ?>

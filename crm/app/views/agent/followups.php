@@ -1,5 +1,6 @@
 <?php
 Security::requireLogin();
+require_once __DIR__ . '/../../helpers/CallUi.php';
 
 $agentId = (int)$_SESSION['user_id'];
 $now     = time();
@@ -71,32 +72,35 @@ function renderFollowUpSection(string $title, array $items, string $accent, stri
     </h2>
 </div>
 <div class="table-wrapper" style="margin-bottom:28px">
-    <table class="data-table">
+    <table class="data-table table-cards">
         <thead>
             <tr><th>Lead</th><th>Phone</th><th>Scheduled</th><th>Note</th><th></th></tr>
         </thead>
         <tbody>
         <?php foreach ($items as $f): ?>
         <tr>
-            <td>
+            <td class="tc-title">
                 <a href="<?= APP_URL ?>/agent/lead/<?= (int)$f['lead_id'] ?>" class="lead-name"><?= Security::e($f['lead_name']) ?></a>
             </td>
-            <td style="font-size:12px;color:var(--text-muted)"><?= Security::e($f['lead_phone'] ?? '—') ?></td>
-            <td>
+            <td data-label="Phone" style="font-size:12px;color:var(--text-muted);white-space:nowrap"><?= Security::e($f['lead_phone'] ?? '-') ?></td>
+            <td data-label="Scheduled">
                 <span style="font-size:12px;color:<?= $accent ?>;font-weight:600">
                     <?= date('d M Y', strtotime($f['scheduled_at'])) ?>
                     <span style="color:var(--text-muted);font-weight:400"><?= date('h:i A', strtotime($f['scheduled_at'])) ?></span>
                 </span>
             </td>
-            <td style="font-size:12px;color:var(--text-muted);max-width:220px"><?= Security::e($f['note'] ?? '—') ?></td>
-            <td>
-                <form method="POST" action="<?= APP_URL ?>/agent/followups" style="display:inline">
-                    <?= Security::csrfField() ?>
-                    <input type="hidden" name="action"      value="done_followup">
-                    <input type="hidden" name="followup_id" value="<?= (int)$f['id'] ?>">
-                    <input type="hidden" name="lead_id"     value="<?= (int)$f['lead_id'] ?>">
-                    <button type="submit" class="btn btn-secondary btn-sm">Mark Done</button>
-                </form>
+            <td class="tc-full" data-label="Note" style="font-size:12px;color:var(--text-muted);max-width:220px"><?= Security::e($f['note'] ?? '-') ?></td>
+            <td class="tc-actions">
+                <div style="display:flex;gap:6px">
+                    <?= CallUi::button($f['lead_phone'] ?? null, (int)$f['lead_id']) ?>
+                    <form method="POST" action="<?= APP_URL ?>/agent/followups" style="display:inline">
+                        <?= Security::csrfField() ?>
+                        <input type="hidden" name="action"      value="done_followup">
+                        <input type="hidden" name="followup_id" value="<?= (int)$f['id'] ?>">
+                        <input type="hidden" name="lead_id"     value="<?= (int)$f['lead_id'] ?>">
+                        <button type="submit" class="btn btn-secondary btn-sm">Mark Done</button>
+                    </form>
+                </div>
             </td>
         </tr>
         <?php endforeach; ?>
@@ -130,13 +134,13 @@ function renderFollowUpSection(string $title, array $items, string $accent, stri
                 <div class="form-group">
                     <label class="form-label">Lead *</label>
                     <select name="lead_id" class="form-control" required>
-                        <option value="">— Select a lead —</option>
+                        <option value="">Select a lead</option>
                         <?php foreach ($myLeads as $l): ?>
                             <option value="<?= (int)$l['id'] ?>"><?= Security::e($l['name'] ?? $l['phone'] ?? 'Lead #'.$l['id']) ?></option>
                         <?php endforeach; ?>
                     </select>
                 </div>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+                <div class="form-grid" style="gap:12px">
                     <div class="form-group">
                         <label class="form-label">Date *</label>
                         <input type="date" name="followup_date" class="form-control" min="<?= date('Y-m-d') ?>" required>

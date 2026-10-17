@@ -11,6 +11,9 @@ $statuses    = $leadModel->getStatuses();
 $followUps   = $leadModel->getAgentFollowUps((int)$_SESSION['user_id']);
 $client      = $clientModel->findByLeadId($id);
 
+require_once __DIR__ . '/../../helpers/CallUi.php';
+$contactRows = (new ContactLog())->getHistory($id, $client ? (int)$client['id'] : 0);
+
 // Is this a Won lead with no client record yet?
 $isWon        = $row['status_name'] === 'Won';
 $needsConvert = $isWon && !$client;
@@ -63,7 +66,7 @@ ob_start();
     <div style="display:flex;align-items:center;gap:12px">
         <span style="font-size:20px">🎉</span>
         <div>
-            <div style="font-weight:600;color:#15803d">Deal is Won — Client details missing</div>
+            <div style="font-weight:600;color:#15803d">Deal is Won: client details missing</div>
             <div style="font-size:13px;color:#166534;margin-top:2px">Please fill in the booking details to complete this client's record.</div>
         </div>
     </div>
@@ -78,9 +81,9 @@ ob_start();
     <span style="font-size:18px">✓</span>
     <div style="font-size:13px;color:#3b5bdb">
         <b>Client record created.</b>
-        Unit: <?= $client['unit_no'] ? Security::e($client['unit_no']) : '—' ?> &nbsp;·&nbsp;
-        Block: <?= $client['block'] ? Security::e($client['block']) : '—' ?> &nbsp;·&nbsp;
-        Booking: <?= $client['booking_amount'] ? 'Rs. ' . number_format((float)$client['booking_amount']) : '—' ?> &nbsp;·&nbsp;
+        Unit: <?= $client['unit_no'] ? Security::e($client['unit_no']) : '-' ?> &nbsp;·&nbsp;
+        Block: <?= $client['block'] ? Security::e($client['block']) : '-' ?> &nbsp;·&nbsp;
+        Booking: <?= $client['booking_amount'] ? 'Rs. ' . number_format((float)$client['booking_amount']) : '-' ?> &nbsp;·&nbsp;
         File: <b style="color:<?= $client['file_status'] === 'mature' ? '#10b981' : '#f59e0b' ?>"><?= ucfirst($client['file_status']) ?></b>
     </div>
 </div>
@@ -96,6 +99,7 @@ ob_start();
         </div>
     </div>
     <div class="page-header-actions">
+        <?= CallUi::button($row['phone'], $id, 0, 'Call', '') ?>
         <a href="<?= APP_URL ?>/agent/leads" class="btn btn-secondary">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18"/></svg>
             Back
@@ -123,10 +127,10 @@ ob_start();
                         <span class="info-label">Phone</span>
                         <span class="info-value">
                             <?php if ($row['phone']): ?>
-                                <a href="tel:<?= Security::e($row['phone']) ?>" style="color:var(--gold)"><?= Security::e($row['phone']) ?></a>
+                                <a href="<?= Security::e(CallUi::telHref($row['phone'])) ?>" class="js-call" data-lead="<?= $id ?>" data-client="0" style="color:var(--gold)"><?= Security::e($row['phone']) ?></a>
                                 &nbsp;
                                 <a href="https://wa.me/<?= preg_replace('/\D/', '', $row['phone']) ?>" target="_blank" class="wa-link">WhatsApp</a>
-                            <?php else: ?>—<?php endif; ?>
+                            <?php else: ?>-<?php endif; ?>
                         </span>
                     </div>
                     <div class="info-row">
@@ -134,20 +138,20 @@ ob_start();
                         <span class="info-value">
                             <?php if ($row['email']): ?>
                                 <a href="mailto:<?= Security::e($row['email']) ?>" style="color:var(--gold)"><?= Security::e($row['email']) ?></a>
-                            <?php else: ?>—<?php endif; ?>
+                            <?php else: ?>-<?php endif; ?>
                         </span>
                     </div>
                     <div class="info-row">
                         <span class="info-label">Company</span>
-                        <span class="info-value"><?= Security::e($row['company'] ?? '—') ?></span>
+                        <span class="info-value"><?= Security::e($row['company'] ?? '-') ?></span>
                     </div>
                     <div class="info-row">
                         <span class="info-label">Location</span>
-                        <span class="info-value"><?= Security::e($row['country'] ?? '—') ?></span>
+                        <span class="info-value"><?= Security::e($row['country'] ?? '-') ?></span>
                     </div>
                     <div class="info-row">
                         <span class="info-label">Source</span>
-                        <span class="info-value"><?= Security::e($row['source_name'] ?? '—') ?></span>
+                        <span class="info-value"><?= Security::e($row['source_name'] ?? '-') ?></span>
                     </div>
                     <div class="info-row">
                         <span class="info-label">Priority</span>
@@ -168,7 +172,7 @@ ob_start();
                     <div class="info-row">
                         <span class="info-label">Claimed</span>
                         <span class="info-value" style="color:var(--text-muted)">
-                            <?= $row['claimed_at'] ? date('d M Y, h:i A', strtotime($row['claimed_at'])) : '—' ?>
+                            <?= $row['claimed_at'] ? date('d M Y, h:i A', strtotime($row['claimed_at'])) : '-' ?>
                         </span>
                     </div>
                 </div>
@@ -266,6 +270,8 @@ ob_start();
 
     <!-- RIGHT: Notes + Timeline -->
     <div class="detail-right">
+
+        <?= CallUi::history($contactRows) ?>
 
         <div class="form-card" style="margin-bottom:16px">
             <div class="form-card-header">

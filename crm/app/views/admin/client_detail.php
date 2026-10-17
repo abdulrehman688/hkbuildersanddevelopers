@@ -3,6 +3,8 @@ Security::requireAdmin();
 // $client, $sources injected by AdminController::clientDetail()
 $pageTitle  = 'Client: ' . ($client['name'] ?? 'Detail');
 $activePage = 'clients';
+require_once APP_ROOT . '/app/helpers/CallUi.php';
+$contactRows = (new ContactLog())->getHistory((int)($client['lead_id'] ?? 0), (int)$client['id']);
 ob_start();
 ?>
 
@@ -22,6 +24,7 @@ ob_start();
         </div>
     </div>
     <div class="page-header-actions">
+        <?= CallUi::button($client['contact_no'], 0, (int)$client['id'], 'Call', '') ?>
         <?php if ($client['lead_id']): ?>
             <a href="<?= APP_URL ?>/admin/lead/<?= (int)$client['lead_id'] ?>" class="btn btn-secondary">View Original Lead</a>
         <?php endif; ?>
@@ -32,7 +35,9 @@ ob_start();
     </div>
 </div>
 
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:start">
+<?= CallUi::history($contactRows) ?>
+
+<div class="two-col client-cols" style="gap:24px;align-items:start">
 
     <!-- Current Details (read view) -->
     <div class="card" style="padding:24px">
@@ -54,7 +59,7 @@ ob_start();
             <?php foreach ($rows as [$label, $value]): ?>
             <div style="display:flex;gap:12px;font-size:13px;padding:8px 0;border-bottom:1px solid var(--border)">
                 <span style="color:var(--text-muted);width:110px;flex-shrink:0"><?= $label ?></span>
-                <span style="color:var(--navy);font-weight:500"><?= $value ? Security::e($value) : '<span style="color:var(--text-muted)">—</span>' ?></span>
+                <span style="color:var(--navy);font-weight:500"><?= $value ? Security::e($value) : '<span style="color:var(--text-muted)">-</span>' ?></span>
             </div>
             <?php endforeach; ?>
             <!-- File Status -->
@@ -92,7 +97,7 @@ ob_start();
                     <label>Address</label>
                     <input type="text" name="address" value="<?= Security::e($client['address'] ?? '') ?>">
                 </div>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+                <div class="form-grid" style="gap:12px">
                     <div class="form-group">
                         <label>Project</label>
                         <input type="text" name="project" value="<?= Security::e($client['project'] ?? '') ?>">
@@ -100,7 +105,7 @@ ob_start();
                     <div class="form-group">
                         <label>Category</label>
                         <select name="category">
-                            <option value="">— Select —</option>
+                            <option value="">Select</option>
                             <?php foreach (['Residential','Commercial','Plot','Other'] as $cat): ?>
                                 <option value="<?= $cat ?>" <?= ($client['category'] ?? '') === $cat ? 'selected' : '' ?>><?= $cat ?></option>
                             <?php endforeach; ?>
@@ -137,7 +142,7 @@ ob_start();
                 <div class="form-group">
                     <label>Lead Source</label>
                     <select name="source_id">
-                        <option value="">— Unknown —</option>
+                        <option value="">Unknown</option>
                         <?php foreach ($sources as $src): ?>
                             <option value="<?= (int)$src['id'] ?>" <?= ((int)($client['source_id'] ?? 0)) === (int)$src['id'] ? 'selected' : '' ?>><?= Security::e($src['name']) ?></option>
                         <?php endforeach; ?>
@@ -153,8 +158,8 @@ ob_start();
 <style>
 @media print {
     /* Hide edit form - only print the client record card */
-    div[style*="grid-template-columns:1fr 1fr"] > div:last-child { display: none !important; }
-    div[style*="grid-template-columns:1fr 1fr"] { grid-template-columns: 1fr !important; }
+    .client-cols > div:last-child, #contactHistory { display: none !important; }
+    .client-cols { grid-template-columns: 1fr !important; }
     body::before {
         content: "HK Builders & Developers  -  Client File Record  -  <?= date('d M Y') ?>";
         display: block; font-size: 12px; font-weight: 600; color: #002147;

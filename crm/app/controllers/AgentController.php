@@ -29,6 +29,11 @@ class AgentController {
         require_once __DIR__ . '/../views/agent/lead_pool.php';
     }
 
+    public function myClients(): void {
+        Security::requireLogin();
+        require_once __DIR__ . '/../views/agent/my_clients.php';
+    }
+
     public function leadDetail(int $id): void {
         Security::requireLogin();
 
@@ -201,7 +206,7 @@ class AgentController {
             exit;
         }
 
-        // Already converted — go back to lead
+        // Already converted: go back to lead
         $clientModel = new Client();
         $existing    = $clientModel->findByLeadId($id);
         if ($existing) {
@@ -242,7 +247,7 @@ class AgentController {
             $leadName    = $lead['name'] ?? ($lead['phone'] ?? "Lead #{$id}");
             $clientName  = trim($_POST['name'] ?? '') ?: $leadName;
             $bookingAmt  = !empty($_POST['booking_amount']) ? 'Rs. ' . number_format((float)$_POST['booking_amount']) : null;
-            $convertDetail = "Lead \"{$leadName}\" converted to client \"{$clientName}\"" . ($bookingAmt ? " — booking {$bookingAmt}." : '.');
+            $convertDetail = "Lead \"{$leadName}\" converted to client \"{$clientName}\"" . ($bookingAmt ? ", booking {$bookingAmt}." : '.');
             AuditLog::log('lead_converted', (int)$_SESSION['user_id'], 'lead', $id, $convertDetail);
 
             $_SESSION['success'] = 'Client record saved successfully!';

@@ -2,6 +2,7 @@
 Security::requireAdmin();
 require_once __DIR__ . '/../../models/Lead.php';
 require_once __DIR__ . '/../../models/User.php';
+require_once __DIR__ . '/../../helpers/CallUi.php';
 
 $leadModel = new Lead();
 $userModel = new User();
@@ -48,7 +49,7 @@ ob_start();
 </div>
 
 <!-- Filters -->
-<form method="GET" class="filter-bar" style="margin-bottom:20px">
+<form method="GET" class="filter-bar" style="margin-bottom:20px;display:flex;flex-wrap:wrap;gap:8px;align-items:center">
     <input type="hidden" name="status" value="<?= $filterDone ? 'done' : 'pending' ?>">
     <select name="agent_id" class="form-control" style="max-width:200px">
         <option value="">All Agents</option>
@@ -68,7 +69,7 @@ ob_start();
 </form>
 
 <div class="table-wrapper">
-    <table class="data-table">
+    <table class="data-table table-cards">
         <thead>
             <tr>
                 <th>Agent</th>
@@ -87,18 +88,23 @@ ob_start();
             $today   = !$filterDone && date('Y-m-d', $ts) === date('Y-m-d');
         ?>
         <tr>
-            <td>
+            <td data-label="Agent">
                 <a href="<?= APP_URL ?>/admin/agent/<?= (int)$f['agent_id'] ?>" style="font-weight:500;color:var(--navy)">
                     <?= Security::e($f['agent_name']) ?>
                 </a>
             </td>
-            <td>
+            <td class="tc-title">
                 <a href="<?= APP_URL ?>/admin/lead/<?= (int)$f['lead_id'] ?>" class="lead-name">
                     <?= Security::e($f['lead_name']) ?>
                 </a>
             </td>
-            <td style="font-size:12px;color:var(--text-muted)"><?= Security::e($f['lead_phone'] ?? '—') ?></td>
-            <td>
+            <td data-label="Phone" style="font-size:12px;color:var(--text-muted);white-space:nowrap">
+                <?= Security::e($f['lead_phone'] ?? '-') ?>
+                <?php if (!$f['is_done'] && ($call = CallUi::button($f['lead_phone'] ?? null, (int)$f['lead_id']))): ?>
+                    <div style="margin-top:4px"><?= $call ?></div>
+                <?php endif; ?>
+            </td>
+            <td data-label="Scheduled">
                 <span style="font-size:12px;font-weight:600;color:<?= $overdue ? '#dc2626' : ($today ? '#d97706' : 'var(--text)') ?>">
                     <?= date('d M Y', $ts) ?>
                     <span style="color:var(--text-muted);font-weight:400"><?= date('h:i A', $ts) ?></span>
@@ -109,8 +115,8 @@ ob_start();
                     <?php endif; ?>
                 </span>
             </td>
-            <td style="font-size:12px;color:var(--text-muted);max-width:220px"><?= Security::e($f['note'] ?? '—') ?></td>
-            <td>
+            <td class="tc-full" data-label="Note" style="font-size:12px;color:var(--text-muted);max-width:220px"><?= Security::e($f['note'] ?? '-') ?></td>
+            <td data-label="Status">
                 <?php if ($f['is_done']): ?>
                     <span class="status-pill" style="background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0">Done</span>
                 <?php elseif ($overdue): ?>
@@ -122,7 +128,7 @@ ob_start();
                 <?php endif; ?>
             </td>
             <?php if ($filterDone): ?>
-            <td style="font-size:12px;color:var(--text-muted)"><?= $f['done_at'] ? date('d M Y', strtotime($f['done_at'])) : '—' ?></td>
+            <td data-label="Completed" style="font-size:12px;color:var(--text-muted)"><?= $f['done_at'] ? date('d M Y', strtotime($f['done_at'])) : '-' ?></td>
             <?php endif; ?>
         </tr>
         <?php endforeach; ?>

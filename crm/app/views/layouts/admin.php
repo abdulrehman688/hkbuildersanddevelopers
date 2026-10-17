@@ -15,12 +15,16 @@ if (!isset($_notifOverdue)) {
     }
 }
 $_notifTotal = $_notifOverdue + $_notifSoon;
+require_once APP_ROOT . '/app/helpers/CallUi.php';
+$_section = ($_SESSION['user_role'] ?? '') === 'admin' ? 'admin' : 'agent';
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="<?= Security::e(Security::generateCsrfToken()) ?>">
+    <meta name="call-endpoint" content="<?= APP_URL ?>/<?= $_section ?>/call-log">
     <title><?= $_notifTotal > 0 ? "({$_notifTotal}) " : '' ?><?= isset($pageTitle) ? Security::e($pageTitle) . ' - ' : '' ?>HK Builders CRM</title>
     <link rel="icon" type="image/svg+xml" href="<?= APP_URL ?>/favicon.svg">
     <link rel="stylesheet" href="<?= APP_URL ?>/css/app.css">
@@ -57,6 +61,10 @@ $_notifTotal = $_notifOverdue + $_notifSoon;
         <a href="<?= APP_URL ?>/admin/clients" class="<?= ($activePage ?? '') === 'clients' ? 'active' : '' ?>">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z"/></svg>
             Clients
+        </a>
+        <a href="<?= APP_URL ?>/admin/calls" class="<?= ($activePage ?? '') === 'calls' ? 'active' : '' ?>">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 01-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z"/></svg>
+            Call Log
         </a>
         <a href="<?= APP_URL ?>/admin/teams" class="<?= ($activePage ?? '') === 'teams' ? 'active' : '' ?>">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z"/></svg>
@@ -109,6 +117,10 @@ $_notifTotal = $_notifOverdue + $_notifSoon;
         <a href="<?= APP_URL ?>/agent/pool" class="<?= ($activePage ?? '') === 'pool' ? 'active' : '' ?>">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 6.375c0 2.278-3.694 4.125-8.25 4.125S3.75 8.653 3.75 6.375m16.5 0c0-2.278-3.694-4.125-8.25-4.125S3.75 4.097 3.75 6.375m16.5 0v11.25c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125V6.375m16.5 2.625c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125"/></svg>
             Lead Pool
+        </a>
+        <a href="<?= APP_URL ?>/agent/clients" class="<?= ($activePage ?? '') === 'clients' ? 'active' : '' ?>">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z"/></svg>
+            My Clients
         </a>
         <?php if (($_SESSION['user_role'] ?? '') === 'sales_manager'): ?>
         <div class="sidebar-nav-label">My Team</div>
@@ -197,6 +209,8 @@ $_notifTotal = $_notifOverdue + $_notifSoon;
         <?= $content ?>
     </div>
 </main>
+
+<?= CallUi::modal() ?>
 
 <script src="<?= APP_URL ?>/js/app.js"></script>
 <script>

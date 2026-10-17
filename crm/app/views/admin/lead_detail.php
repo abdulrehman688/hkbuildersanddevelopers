@@ -13,6 +13,11 @@ if (!$row) {
     exit;
 }
 
+require_once __DIR__ . '/../../models/Client.php';
+require_once __DIR__ . '/../../helpers/CallUi.php';
+$leadClient  = (new Client())->findByLeadId($id);
+$contactRows = (new ContactLog())->getHistory($id, $leadClient ? (int)$leadClient['id'] : 0);
+
 $activities = $leadModel->getActivities($id);
 $statuses   = $leadModel->getStatuses();
 $sources    = $leadModel->getSources();
@@ -73,6 +78,7 @@ ob_start();
         </div>
     </div>
     <div class="page-header-actions">
+        <?= CallUi::button($row['phone'], $id, 0, 'Call', '') ?>
         <?php if (!$isEdit): ?>
             <a href="?edit=1" class="btn btn-secondary">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125"/></svg>
@@ -130,7 +136,7 @@ ob_start();
                         <div class="form-group">
                             <label>Source</label>
                             <select name="source_id">
-                                <option value="">— Select —</option>
+                                <option value="">Select</option>
                                 <?php foreach ($sources as $src): ?>
                                     <option value="<?= (int)$src['id'] ?>" <?= (int)$row['source_id'] === (int)$src['id'] ? 'selected' : '' ?>>
                                         <?= Security::e($src['name']) ?>
@@ -176,10 +182,10 @@ ob_start();
                         <span class="info-label">Phone</span>
                         <span class="info-value">
                             <?php if ($row['phone']): ?>
-                                <a href="tel:<?= Security::e($row['phone']) ?>" style="color:var(--gold)"><?= Security::e($row['phone']) ?></a>
+                                <a href="<?= Security::e(CallUi::telHref($row['phone'])) ?>" class="js-call" data-lead="<?= $id ?>" data-client="0" style="color:var(--gold)"><?= Security::e($row['phone']) ?></a>
                                 &nbsp;
                                 <a href="https://wa.me/<?= preg_replace('/\D/', '', $row['phone']) ?>" target="_blank" class="wa-link">WhatsApp</a>
-                            <?php else: ?>—<?php endif; ?>
+                            <?php else: ?>-<?php endif; ?>
                         </span>
                     </div>
                     <div class="info-row">
@@ -187,20 +193,20 @@ ob_start();
                         <span class="info-value">
                             <?php if ($row['email']): ?>
                                 <a href="mailto:<?= Security::e($row['email']) ?>" style="color:var(--gold)"><?= Security::e($row['email']) ?></a>
-                            <?php else: ?>—<?php endif; ?>
+                            <?php else: ?>-<?php endif; ?>
                         </span>
                     </div>
                     <div class="info-row">
                         <span class="info-label">Company</span>
-                        <span class="info-value"><?= Security::e($row['company'] ?? '—') ?></span>
+                        <span class="info-value"><?= Security::e($row['company'] ?? '-') ?></span>
                     </div>
                     <div class="info-row">
                         <span class="info-label">Location</span>
-                        <span class="info-value"><?= Security::e($row['country'] ?? '—') ?></span>
+                        <span class="info-value"><?= Security::e($row['country'] ?? '-') ?></span>
                     </div>
                     <div class="info-row">
                         <span class="info-label">Source</span>
-                        <span class="info-value"><?= Security::e($row['source_name'] ?? '—') ?></span>
+                        <span class="info-value"><?= Security::e($row['source_name'] ?? '-') ?></span>
                     </div>
                     <div class="info-row">
                         <span class="info-label">Priority</span>
@@ -285,7 +291,7 @@ ob_start();
                     <div class="form-group" style="margin-bottom:0">
                         <label>Assign to Agent</label>
                         <select name="agent_id" required>
-                            <option value="">— Select Agent —</option>
+                            <option value="">Select Agent</option>
                             <?php foreach ($agents as $agent): ?>
                                 <?php if ($agent['status'] === 'active'): ?>
                                     <option value="<?= (int)$agent['id'] ?>" <?= (int)$row['assigned_to'] === (int)$agent['id'] ? 'selected' : '' ?>>
@@ -310,7 +316,7 @@ ob_start();
                     <input type="hidden" name="action" value="unassign">
                     <button type="submit" class="btn btn-danger btn-sm"
                         onclick="return confirm('Return this lead to the unassigned pool?')">
-                        Unassign — Return to Pool
+                        Unassign: Return to Pool
                     </button>
                 </form>
             </div>
@@ -340,6 +346,8 @@ ob_start();
 
     <!-- RIGHT: Activity timeline + add note -->
     <div class="detail-right">
+
+        <?= CallUi::history($contactRows) ?>
 
         <!-- Add Note -->
         <div class="form-card" style="margin-bottom:16px">
