@@ -1,5 +1,6 @@
 <?php
 Security::requireAdmin();
+$js = fn($v) => json_encode($v, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP);
 require_once __DIR__ . '/../../models/Team.php';
 require_once __DIR__ . '/../../models/User.php';
 
@@ -67,7 +68,7 @@ ob_start();
         </div>
         <div style="display:flex;gap:6px">
             <button class="btn btn-sm" style="background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.2)"
-                onclick="openEditModal(<?= (int)$t['id'] ?>, '<?= Security::e($t['name']) ?>', <?= (int)($t['sales_manager_id'] ?? 0) ?>)">Edit</button>
+                onclick='openEditModal(<?= (int)$t["id"] ?>, <?= $js($t["name"]) ?>, <?= (int)($t["sales_manager_id"] ?? 0) ?>)'>Edit</button>
             <form method="POST" action="<?= APP_URL ?>/admin/teams" style="margin:0">
                 <?= Security::csrfField() ?>
                 <input type="hidden" name="action"  value="delete">
@@ -126,7 +127,7 @@ ob_start();
             <input type="hidden" name="action"  value="assign_agent">
             <input type="hidden" name="team_id" value="<?= (int)$t['id'] ?>">
             <select name="agent_id" style="flex:1;font-size:13px;padding:7px 10px;border:1px solid var(--border);border-radius:8px">
-                <option value="">— Add agent —</option>
+                <option value="">Add agent</option>
                 <?php foreach ($unassigned as $ua): ?>
                     <option value="<?= (int)$ua['id'] ?>"><?= Security::e($ua['name']) ?></option>
                 <?php endforeach; ?>
@@ -181,7 +182,7 @@ ob_start();
                 <div class="form-group">
                     <label>Sales Manager</label>
                     <select name="manager_id">
-                        <option value="">— Assign later —</option>
+                        <option value="">Assign later</option>
                         <?php foreach ($salesManagers as $sm): ?>
                             <option value="<?= (int)$sm['id'] ?>"><?= Security::e($sm['name']) ?></option>
                         <?php endforeach; ?>
@@ -220,7 +221,7 @@ ob_start();
                 <div class="form-group">
                     <label>Sales Manager</label>
                     <select name="manager_id" id="editTeamManager">
-                        <option value="">— None —</option>
+                        <option value="">None</option>
                         <?php foreach ($salesManagers as $sm): ?>
                             <option value="<?= (int)$sm['id'] ?>"><?= Security::e($sm['name']) ?></option>
                         <?php endforeach; ?>

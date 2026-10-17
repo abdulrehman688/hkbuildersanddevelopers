@@ -70,6 +70,37 @@ document.addEventListener('click', function(e) {
     }
 });
 
+// ---- Phone card tables (.table-cards) -------------------------
+// Fills in what a view did not mark by hand:
+//   data-label  = the column header (empty header = no label)
+//   .tc-title   = first cell, when the row has no title cell
+//   .tc-actions = a cell with buttons/links under an empty header
+document.querySelectorAll('table.table-cards').forEach(function(table) {
+    var heads = Array.prototype.map.call(table.querySelectorAll('thead th'), function(th) {
+        return th.textContent.trim();
+    });
+    if (!heads.length) return;
+    table.querySelectorAll('tbody tr').forEach(function(tr) {
+        var cells = Array.prototype.slice.call(tr.children);
+        if (cells.length === 1) return;   // "no rows" message
+        var hasTitle = tr.querySelector('.tc-title');
+        var col = 0;
+        cells.forEach(function(td) {
+            var span = parseInt(td.getAttribute('colspan') || '1', 10);
+            var cl = td.classList;
+            var marked = cl.contains('tc-title') || cl.contains('tc-actions') || cl.contains('tc-hide');
+            if (!marked && !hasTitle) {
+                cl.add('tc-title'); hasTitle = true;
+            } else if (!marked && !heads[col] && td.querySelector('a, button, form')) {
+                cl.add('tc-actions');
+            } else if (!marked && span === 1 && heads[col] && !td.hasAttribute('data-label')) {
+                td.setAttribute('data-label', heads[col]);
+            }
+            col += span;
+        });
+    });
+});
+
 // ---- Call button + "how did the call go" popup ---------------
 // Tapping Call saves the call, then the phone dialer opens (normal tel: link).
 // When the agent comes back to the CRM, the popup asks for the result and

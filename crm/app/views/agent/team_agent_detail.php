@@ -16,7 +16,7 @@ $lost         = (int)$stats['st_lost'];
 $closed       = $won + $lost;
 $conversion   = $closed > 0 ? round(($won / $closed) * 100) : 0;
 $initials     = strtoupper(substr($agent['name'] ?? 'A', 0, 1));
-$totalBooking = array_sum(array_column($wonDeals, 'investment_amount'));
+$totalBooking = array_sum(array_column($wonDeals, 'booking_amount'));
 $estComm      = $totalBooking * ((float)$agent['commission_rate'] / 100);
 $fuTotal      = (int)$followUpStats['total'];
 $fuRate       = $fuTotal > 0 ? round(((int)$followUpStats['done'] / $fuTotal) * 100) : 0;
@@ -69,7 +69,7 @@ $chartWon     = json_encode(array_map(fn($r) => (int)$r['won'],   $monthlyTrend)
                 <div class="sidebar-avatar" style="width:68px;height:68px;font-size:27px;margin:0 auto 12px">
                     <?= Security::e($initials) ?>
                 </div>
-                <div style="font-size:18px;font-weight:600;color:var(--navy)"><?= Security::e($agent['name'] ?? '—') ?></div>
+                <div style="font-size:18px;font-weight:600;color:var(--navy)"><?= Security::e($agent['name'] ?? '-') ?></div>
                 <div style="margin-top:6px">
                     <span class="status-pill" style="background:#f0f4ff;color:#3b5bdb;border:1px solid #c5d0fa">Agent</span>
                     <?php if ($agent['status'] === 'suspended'): ?>
@@ -172,7 +172,7 @@ $chartWon     = json_encode(array_map(fn($r) => (int)$r['won'],   $monthlyTrend)
         <!-- Monthly Trend Chart -->
         <?php if (!empty($monthlyTrend)): ?>
         <div class="card" style="padding:20px">
-            <div style="font-size:14px;font-weight:600;color:var(--navy);margin-bottom:16px">Monthly Trend — Last 6 Months</div>
+            <div style="font-size:14px;font-weight:600;color:var(--navy);margin-bottom:16px">Monthly Trend - Last 6 Months</div>
             <canvas id="trendChart" height="90"></canvas>
         </div>
         <?php endif; ?>
@@ -204,7 +204,7 @@ $chartWon     = json_encode(array_map(fn($r) => (int)$r['won'],   $monthlyTrend)
         <div class="card" style="padding:0">
             <div style="padding:14px 18px 12px;border-bottom:1px solid var(--border);font-size:14px;font-weight:600;color:var(--navy)">Lead Source Breakdown</div>
             <div class="table-wrapper" style="margin:0">
-                <table class="data-table">
+                <table class="data-table table-cards">
                     <thead>
                         <tr><th>Source</th><th>Total</th><th>Won</th><th>Lost</th><th>Conversion</th></tr>
                     </thead>
@@ -225,7 +225,7 @@ $chartWon     = json_encode(array_map(fn($r) => (int)$r['won'],   $monthlyTrend)
                                 <div class="conv-bar" style="width:60px"><div class="conv-fill" style="width:<?= $sConv ?>%"></div></div>
                                 <span style="font-size:12px;font-weight:600;color:var(--navy)"><?= $sConv ?>%</span>
                             </div>
-                            <?php else: ?>—<?php endif; ?>
+                            <?php else: ?>-<?php endif; ?>
                         </td>
                     </tr>
                     <?php endforeach; ?>
@@ -247,24 +247,24 @@ $chartWon     = json_encode(array_map(fn($r) => (int)$r['won'],   $monthlyTrend)
                 <?php endif; ?>
             </div>
             <div class="table-wrapper" style="margin:0">
-                <table class="data-table">
+                <table class="data-table table-cards">
                     <thead>
                         <tr><th>Client</th><th>Project</th><th>Category</th><th>Investment</th><th>Est. Comm.</th><th>Closed On</th></tr>
                     </thead>
                     <tbody>
                     <?php foreach ($wonDeals as $deal):
-                        $dComm = $deal['investment_amount']
-                            ? (float)$deal['investment_amount'] * ((float)$agent['commission_rate'] / 100) : 0;
+                        $dComm = $deal['booking_amount']
+                            ? (float)$deal['booking_amount'] * ((float)$agent['commission_rate'] / 100) : 0;
                     ?>
                     <tr>
                         <td>
                             <div style="font-weight:500;color:var(--navy)"><?= Security::e($deal['name']) ?></div>
                             <?php if ($deal['phone']): ?><div style="font-size:11px;color:var(--text-muted)"><?= Security::e($deal['phone']) ?></div><?php endif; ?>
                         </td>
-                        <td style="font-size:13px"><?= $deal['project'] ? Security::e($deal['project']) : '—' ?></td>
-                        <td style="font-size:13px"><?= $deal['category'] ? Security::e($deal['category']) : '—' ?></td>
-                        <td style="font-weight:600;color:var(--navy)"><?= $deal['investment_amount'] ? 'Rs. '.number_format((float)$deal['investment_amount']) : '—' ?></td>
-                        <td style="color:#10b981;font-weight:500"><?= $dComm > 0 ? 'Rs. '.number_format($dComm) : '—' ?></td>
+                        <td style="font-size:13px"><?= $deal['project'] ? Security::e($deal['project']) : '-' ?></td>
+                        <td style="font-size:13px"><?= $deal['category'] ? Security::e($deal['category']) : '-' ?></td>
+                        <td style="font-weight:600;color:var(--navy)"><?= $deal['booking_amount'] ? 'Rs. '.number_format((float)$deal['booking_amount']) : '-' ?></td>
+                        <td style="color:#10b981;font-weight:500"><?= $dComm > 0 ? 'Rs. '.number_format($dComm) : '-' ?></td>
                         <td style="font-size:12px;color:var(--text-muted)"><?= date('d M Y', strtotime($deal['updated_at'])) ?></td>
                     </tr>
                     <?php endforeach; ?>
@@ -279,10 +279,10 @@ $chartWon     = json_encode(array_map(fn($r) => (int)$r['won'],   $monthlyTrend)
         <!-- All Leads -->
         <div class="card" style="padding:0">
             <div style="padding:14px 18px 12px;border-bottom:1px solid var(--border);font-size:14px;font-weight:600;color:var(--navy)">
-                All Leads<?= $month ? ' — '.Security::e($month) : '' ?> (<?= count($agentLeads) ?>)
+                All Leads<?= $month ? ' - '.Security::e($month) : '' ?> (<?= count($agentLeads) ?>)
             </div>
             <div class="table-wrapper" style="margin:0">
-                <table class="data-table">
+                <table class="data-table table-cards">
                     <thead>
                         <tr><th>Name / Phone</th><th>Project</th><th>Category</th><th>Status</th><th>Date</th></tr>
                     </thead>
@@ -293,8 +293,8 @@ $chartWon     = json_encode(array_map(fn($r) => (int)$r['won'],   $monthlyTrend)
                             <div style="font-weight:500;color:var(--navy)"><?= Security::e($row['name']) ?></div>
                             <?php if ($row['phone']): ?><div style="font-size:11px;color:var(--text-muted)"><?= Security::e($row['phone']) ?></div><?php endif; ?>
                         </td>
-                        <td style="font-size:13px"><?= $row['project'] ? Security::e($row['project']) : '—' ?></td>
-                        <td style="font-size:13px"><?= $row['category'] ? Security::e($row['category']) : '—' ?></td>
+                        <td style="font-size:13px"><?= $row['project'] ? Security::e($row['project']) : '-' ?></td>
+                        <td style="font-size:13px"><?= $row['category'] ? Security::e($row['category']) : '-' ?></td>
                         <td>
                             <span class="status-pill" style="background:<?= Security::e($row['status_color']) ?>22;color:<?= Security::e($row['status_color']) ?>;border:1px solid <?= Security::e($row['status_color']) ?>44">
                                 <?= Security::e($row['status_name']) ?>
@@ -344,7 +344,7 @@ $chartWon     = json_encode(array_map(fn($r) => (int)$r['won'],   $monthlyTrend)
     .sidebar,.hamburger-btn,.sidebar-overlay,.page-header-actions,form[method="GET"] { display:none !important }
     .main-content { margin:0 !important; padding:20px !important }
     body::before {
-        content:"HK Builders & Developers — Agent Report: <?= Security::e($agent['name'] ?? '') ?> — <?= date('d M Y') ?>";
+        content:"HK Builders & Developers - Agent Report: <?= Security::e($agent['name'] ?? '') ?> - <?= date('d M Y') ?>";
         display:block; font-size:13px; color:#666; margin-bottom:16px;
         border-bottom:2px solid #c9a84c; padding-bottom:10px;
     }

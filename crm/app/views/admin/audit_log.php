@@ -22,9 +22,9 @@ $logs = $logs->fetchAll();
 $actionLabels = [
     'login_success'          => ['Login',              '#10b981'],
     'login_fail'             => ['Login Failed',        '#f59e0b'],
-    'login_fail_unknown_email'=> ['Login — Unknown Email','#f59e0b'],
-    'login_blocked_locked'   => ['Blocked — Locked',   '#ef4444'],
-    'login_blocked_suspended'=> ['Blocked — Suspended','#ef4444'],
+    'login_fail_unknown_email'=> ['Login - Unknown Email','#f59e0b'],
+    'login_blocked_locked'   => ['Blocked - Locked',   '#ef4444'],
+    'login_blocked_suspended'=> ['Blocked - Suspended','#ef4444'],
     'login_remember_me'      => ['Auto Login',          '#3b82f6'],
     'logout'                 => ['Logout',              '#6b7280'],
     'password_changed'       => ['Password Changed',   '#8b5cf6'],
@@ -45,7 +45,7 @@ ob_start();
 </div>
 
 <div class="table-wrapper">
-    <table class="data-table">
+    <table class="data-table table-cards">
         <thead>
             <tr>
                 <th>Time</th>
@@ -70,15 +70,15 @@ ob_start();
                     </span>
                 </td>
                 <td style="font-size:13px">
-                    <?= $log['user_name'] ? Security::e($log['user_name']) : '<span style="color:var(--text-muted)">—</span>' ?>
+                    <?= $log['user_name'] ? Security::e($log['user_name']) : '<span style="color:var(--text-muted)">-</span>' ?>
                 </td>
                 <td style="font-size:12px;color:var(--text-muted);font-family:monospace">
-                    <?= Security::e($log['ip_address'] ?? '—') ?>
+                    <?= Security::e($log['ip_address'] ?? '-') ?>
                 </td>
                 <td style="font-size:12px;color:var(--text-muted)">
                     <?php if ($log['target_type'] && $log['target_id']): ?>
                         <?= Security::e($log['target_type']) ?> #<?= (int)$log['target_id'] ?>
-                    <?php else: ?>—<?php endif; ?>
+                    <?php else: ?>-<?php endif; ?>
                 </td>
             </tr>
         <?php endforeach; ?>

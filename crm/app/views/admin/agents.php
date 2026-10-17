@@ -1,5 +1,6 @@
 <?php
 Security::requireAdmin();
+$js = fn($v) => json_encode($v, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP);
 require_once __DIR__ . '/../../models/User.php';
 
 $userModel   = new User();
@@ -77,7 +78,7 @@ $avgConv    = $totalClosed > 0 ? round(($totalWon / $totalClosed) * 100) : 0;
 
 <!-- Agents Table -->
 <div class="table-wrapper">
-    <table class="data-table">
+    <table class="data-table table-cards">
         <thead>
             <tr>
                 <th>Agent</th>
@@ -123,7 +124,7 @@ $avgConv    = $totalClosed > 0 ? round(($totalWon / $totalClosed) * 100) : 0;
                         <span class="status-pill" style="background:#f0f4ff;color:#3b5bdb;border:1px solid #c5d0fa">Agent</span>
                     <?php endif; ?>
                 </td>
-                <td style="color:var(--text-muted);font-size:12px"><?= $agent['designation'] ? Security::e($agent['designation']) : '—' ?></td>
+                <td style="color:var(--text-muted);font-size:12px"><?= $agent['designation'] ? Security::e($agent['designation']) : '-' ?></td>
                 <td>
                     <?php if ($agent['status'] === 'active'): ?>
                         <span class="status-pill" style="background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0">Active</span>
@@ -144,7 +145,7 @@ $avgConv    = $totalClosed > 0 ? round(($totalWon / $totalClosed) * 100) : 0;
                             <span style="font-size:12px;font-weight:600;color:var(--navy)"><?= $conversion ?>%</span>
                         </div>
                     <?php else: ?>
-                        <span style="color:var(--text-muted);font-size:12px">—</span>
+                        <span style="color:var(--text-muted);font-size:12px">-</span>
                     <?php endif; ?>
                 </td>
                 <td style="color:var(--text-muted);font-size:12px"><?= date('d M Y', strtotime($agent['created_at'])) ?></td>
@@ -161,7 +162,7 @@ $avgConv    = $totalClosed > 0 ? round(($totalWon / $totalClosed) * 100) : 0;
                             </button>
                         </form>
                         <button class="btn btn-secondary btn-sm"
-                            onclick="openResetModal(<?= (int)$agent['id'] ?>, '<?= Security::e($agent['name']) ?>')">
+                            onclick='openResetModal(<?= (int)$agent["id"] ?>, <?= $js($agent["name"]) ?>)'>
                             Reset PW
                         </button>
                     </div>
@@ -252,7 +253,7 @@ $avgConv    = $totalClosed > 0 ? round(($totalWon / $totalClosed) * 100) : 0;
 <div class="modal-overlay" id="resetPwModal">
     <div class="modal">
         <div class="modal-header">
-            <h3>Reset Password — <span id="resetAgentName"></span></h3>
+            <h3>Reset Password - <span id="resetAgentName"></span></h3>
             <button class="modal-close" onclick="closeModal('resetPwModal')">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
             </button>

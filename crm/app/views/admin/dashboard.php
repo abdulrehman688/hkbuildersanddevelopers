@@ -2,6 +2,7 @@
 Security::requireAdmin();
 require_once __DIR__ . '/../../models/Lead.php';
 require_once __DIR__ . '/../../models/Accounts.php';
+require_once __DIR__ . '/../../helpers/CallUi.php';
 
 $lead          = new Lead();
 $_acc          = new Accounts();
@@ -127,7 +128,7 @@ ob_start();
 </div>
 
 <div class="table-wrapper">
-    <table class="data-table">
+    <table class="data-table table-cards">
         <thead>
             <tr>
                 <th>Lead</th>
@@ -143,14 +144,14 @@ ob_start();
         <tbody>
         <?php foreach ($recent as $row): ?>
             <tr onclick="window.location='<?= APP_URL ?>/admin/lead/<?= (int)$row['id'] ?>'">
-                <td>
-                    <div class="lead-name"><?= Security::e($row['name']) ?></div>
+                <td class="tc-title">
+                    <div class="lead-name"><?= Security::e($row['name'] ?? 'Unknown') ?></div>
                     <?php if ($row['email']): ?>
                         <div class="lead-sub"><?= Security::e($row['email']) ?></div>
                     <?php endif; ?>
                 </td>
-                <td><?= Security::e($row['phone'] ?? '—') ?></td>
-                <td><?= Security::e($row['source_name'] ?? '—') ?></td>
+                <td><?= Security::e($row['phone'] ?? '-') ?></td>
+                <td><?= Security::e($row['source_name'] ?? '-') ?></td>
                 <td>
                     <span class="badge badge-<?= Security::e($row['priority']) ?>">
                         <span class="badge-dot"></span>
@@ -162,9 +163,14 @@ ob_start();
                         <?= Security::e($row['status_name']) ?>
                     </span>
                 </td>
-                <td><?= Security::e($row['agent_name'] ?? '—') ?></td>
+                <td><?= Security::e($row['agent_name'] ?? '-') ?></td>
                 <td style="color:var(--text-muted);font-size:12px"><?= date('d M Y', strtotime($row['created_at'])) ?></td>
-                <td><a href="<?= APP_URL ?>/admin/lead/<?= (int)$row['id'] ?>">View</a></td>
+                <td class="tc-actions">
+                    <div style="display:flex;gap:6px">
+                        <?= CallUi::button($row['phone'], (int)$row['id']) ?>
+                        <a href="<?= APP_URL ?>/admin/lead/<?= (int)$row['id'] ?>" class="btn btn-secondary btn-sm" onclick="event.stopPropagation()">View</a>
+                    </div>
+                </td>
             </tr>
         <?php endforeach; ?>
         <?php if (empty($recent)): ?>
@@ -189,7 +195,7 @@ ob_start();
     <a href="<?= APP_URL ?>/admin/followups">View All &rarr;</a>
 </div>
 <div class="table-wrapper">
-    <table class="data-table">
+    <table class="data-table table-cards">
         <thead>
             <tr><th>Agent</th><th>Lead</th><th>Scheduled</th><th>Note</th><th></th></tr>
         </thead>
@@ -199,15 +205,15 @@ ob_start();
         ?>
         <tr>
             <td style="font-size:13px;font-weight:500;color:var(--navy)"><?= Security::e($f['agent_name']) ?></td>
-            <td><a href="<?= APP_URL ?>/admin/lead/<?= (int)$f['lead_id'] ?>" class="lead-name"><?= Security::e($f['lead_name']) ?></a></td>
+            <td class="tc-title"><a href="<?= APP_URL ?>/admin/lead/<?= (int)$f['lead_id'] ?>" class="lead-name"><?= Security::e($f['lead_name']) ?></a></td>
             <td>
                 <span style="font-size:12px;color:<?= $overdue ? '#dc2626' : '#d97706' ?>;font-weight:600">
                     <?= date('d M Y, h:i A', strtotime($f['scheduled_at'])) ?>
                     <?php if ($overdue): ?><span style="display:block;font-size:10px;font-weight:700">OVERDUE</span><?php endif; ?>
                 </span>
             </td>
-            <td style="font-size:12px;color:var(--text-muted)"><?= Security::e($f['note'] ?? '—') ?></td>
-            <td><a href="<?= APP_URL ?>/admin/agent/<?= (int)$f['agent_id'] ?>">Agent</a></td>
+            <td class="tc-full" style="font-size:12px;color:var(--text-muted)"><?= Security::e($f['note'] ?? '-') ?></td>
+            <td class="tc-actions"><a href="<?= APP_URL ?>/admin/agent/<?= (int)$f['agent_id'] ?>" class="btn btn-secondary btn-sm">Agent</a></td>
         </tr>
         <?php endforeach; ?>
         </tbody>

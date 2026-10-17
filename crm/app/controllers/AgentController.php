@@ -343,7 +343,7 @@ class AgentController {
                 if ($fupId) {
                     $done = $this->lead->markFollowUpDone($fupId, $agentId);
                     if ($done && $leadId) {
-                        $this->lead->logActivity($leadId, $agentId, 'followup_done', 'Follow-up marked as done.');
+                        $this->lead->logActivity($leadId, $agentId, 'note', 'Follow-up marked as done.');
                     }
                     $_SESSION['success'] = 'Follow-up marked as done.';
                 }

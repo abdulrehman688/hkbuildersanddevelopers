@@ -223,7 +223,9 @@ crm/
 
 - **Theme:** navy and gold, Cormorant Garamond plus Jost, CSS variables (`--navy`, `--gold`, `--bg`, `--bg-card`, `--text`, `--text-muted`, `--border`, `--border-light`). Money is shown as `'PKR ' . number_format($v, 0)`.
 - **Page skeleton:** `.page-header` (h1, breadcrumb, `.page-header-actions` buttons), then sub-nav tabs `div.sub-nav`, stat chips `div.chip-row`, filters `.filter-bar > form[method=GET] > .filter-row > select.filter-input`, and a `.card` holding the table.
-- **Tables:** `.card > div(overflow-x:auto) > table.data-table.table-cards`. Every cell gets `data-label="..."`. Mark cells with `.tc-title` (card heading), `.tc-sub` (line under it), `.tc-full` (full width) and `.tc-actions` (buttons). On phone screens each row turns into a card automatically, while desktop and print keep the table.
+- **Tables:** `.card > div(overflow-x:auto) > table.data-table.table-cards`. Every CRM list table uses `table-cards` (except the printable builder statement). Mark cells with `.tc-title` (card heading), `.tc-sub` (line under it), `.tc-full` (full width), `.tc-actions` (buttons) and `.tc-hide` (hidden on phones, e.g. a row number). `js/app.js` fills in what a view leaves out: `data-label` from the column header, the first cell as `.tc-title`, and a button cell under an empty header as `.tc-actions`; anything set in the HTML wins. On phone screens each row turns into a card, while desktop and print keep the table.
+- **Phone rules in `app.css`:** under 768px, inline grids written as `grid-template-columns:1fr 1fr`, `300px 1fr`, `290px 1fr` or `minmax(340px, ...)` collapse to one column, `repeat(4,1fr)` to two, and `.sub-nav` tab rows scroll sideways instead of overflowing. Prefer the classes `.two-col` / `.form-grid` for new layouts. `.stats-grid` stays two columns down to 320px.
+- **Call button:** `CallUi::button($phone, $leadId, $clientId)` wherever a lead or client phone number is shown; it renders nothing when there is no number. Views that use it `require_once` `app/helpers/CallUi.php`.
 - **Modals:** `.modal-overlay#id > .modal > .modal-header + form > (.modal-body + .modal-footer)`, opened with `openModal('id')`. The form inside `.modal` is a flex column; keep that chain or the body stops scrolling. Edit modals copy the Add modal's body HTML, then fill in values.
 - **Alerts:** `.alert.alert-success`, `.alert-error`, `.alert-info`, `.alert-warning`.
 - **Data in onclick attributes:** `$js = fn($v) => json_encode($v, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP);` then `onclick='editX(<?= $js($row) ?>)'` (single-quoted attribute). Plain `json_encode` breaks on apostrophes.
@@ -272,12 +274,13 @@ crm/
 - Accounts: Expenses period filters and date range; Commission overhaul (project dropdown, dates, payment source and reference, automatic paid amount, money chips).
 - Builders: Units section; payments linked to units; maturity status and filters; commission, paid and unpaid on every builder page and the statement; phone card layout for all Builders tables.
 - `full_install.sql` fixed (it created an outdated `expenses` table) and fresh-install steps verified; this file replaces `crm/SESSION-CONTEXT.md` and `crm/FEATURES.md`.
+- 2026-10-18, phase 1 of the mobile app plan: Call button on every lead and client, call result popup, Contact History card, admin Call Log, agent My Clients page; phone card layout on every CRM table; inline grids collapse on phones; apostrophes no longer break Edit buttons; sales manager's team agent page shows booking and commission again (`booking_amount` key); marking a follow-up done no longer writes an invalid activity type.
+- **Mobile app plan (owner approved 2026-10-18):** 1) calls and talk time (done), 2) lead distribution: Auto Distribute splits unassigned leads equally between active agents (admin: all agents, sales manager: own team), plus manual bulk assign; the pool and claiming stay, 3) agent location every few minutes during working hours while logged in, admin map (OpenStreetMap), 4) Android APK (Capacitor) wrapping the live CRM with background location and call-log sync for exact talk time. The APK is shared directly with agents, not through the Play Store.
 
 ---
 
 ## 14. Open items
 
 1. **Security, high priority:** the production database password is committed in `crm/config/config.php`. It was also exposed in the old `crm/SESSION-CONTEXT.md`, which was removed on 2026-10-06 but is still in git history. Move the credentials to an untracked `crm/config/config.local.php` (create it on Hostinger by hand first), then change the database user's password in hPanel.
-2. Other CRM views (accounts pages, leads, clients, agents, teams, notices) still put plain `json_encode` inside onclick attributes, so a name or note with an apostrophe breaks the Edit button. Switch them to the `$js` helper (section 10).
-3. Apply the phone card layout (`table-cards`) to the Accounts tables and the other CRM tables.
-4. Idea: link leads and clients to builder projects (`builder_id`, `project_id`) so a converted client can become a unit automatically.
+2. Run `migrations/contact_logs.sql` on production (then mark it applied in section 8).
+3. Idea: link leads and clients to builder projects (`builder_id`, `project_id`) so a converted client can become a unit automatically.

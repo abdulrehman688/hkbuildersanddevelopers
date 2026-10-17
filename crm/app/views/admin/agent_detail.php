@@ -71,7 +71,7 @@ $chartWon    = json_encode(array_map(fn($r) => (int)$r['won'],   $monthlyTrend))
                 <div class="sidebar-avatar" style="width:70px;height:70px;font-size:28px;margin:0 auto 12px;<?= $isSM ? 'background:var(--gold);color:var(--navy)' : '' ?>">
                     <?= Security::e($initials) ?>
                 </div>
-                <div style="font-size:18px;font-weight:600;color:var(--navy)"><?= Security::e($agent['name'] ?? '—') ?></div>
+                <div style="font-size:18px;font-weight:600;color:var(--navy)"><?= Security::e($agent['name'] ?? '-') ?></div>
                 <div style="margin-top:6px">
                     <?php if ($isSM): ?>
                         <span class="status-pill" style="background:#fff8e8;color:#92600a;border:1px solid #f0e2bd">Sales Manager</span>
@@ -206,7 +206,7 @@ $chartWon    = json_encode(array_map(fn($r) => (int)$r['won'],   $monthlyTrend))
             <!-- Year-by-Year Table -->
             <?php if (!empty($careerByYear)): ?>
             <div class="table-wrapper" style="margin:0">
-                <table class="data-table">
+                <table class="data-table table-cards">
                     <thead>
                         <tr>
                             <th>Year</th>
@@ -230,10 +230,10 @@ $chartWon    = json_encode(array_map(fn($r) => (int)$r['won'],   $monthlyTrend))
                         <td style="text-align:center;color:#10b981;font-weight:600"><?= $yrWon ?></td>
                         <td style="text-align:center;color:#ef4444;font-weight:500"><?= $yrLost ?></td>
                         <td style="font-weight:600;color:var(--navy)">
-                            <?= $yr['booking_value'] > 0 ? 'Rs. ' . number_format((float)$yr['booking_value']) : '—' ?>
+                            <?= $yr['booking_value'] > 0 ? 'Rs. ' . number_format((float)$yr['booking_value']) : '-' ?>
                         </td>
                         <td style="color:#10b981;font-weight:600">
-                            <?= $yr['commission'] > 0 ? 'Rs. ' . number_format((float)$yr['commission']) : '—' ?>
+                            <?= $yr['commission'] > 0 ? 'Rs. ' . number_format((float)$yr['commission']) : '-' ?>
                         </td>
                     </tr>
                     <?php endforeach; ?>
@@ -247,7 +247,7 @@ $chartWon    = json_encode(array_map(fn($r) => (int)$r['won'],   $monthlyTrend))
         <?php if (!empty($monthlyTrend)): ?>
         <div class="card" style="padding:20px">
             <div style="font-size:14px;font-weight:600;color:var(--navy);margin-bottom:16px">
-                Monthly Trend — Last 6 Months
+                Monthly Trend - Last 6 Months
             </div>
             <canvas id="trendChart" height="90"></canvas>
         </div>
@@ -282,7 +282,7 @@ $chartWon    = json_encode(array_map(fn($r) => (int)$r['won'],   $monthlyTrend))
                 Lead Source Breakdown
             </div>
             <div class="table-wrapper" style="margin:0">
-                <table class="data-table">
+                <table class="data-table table-cards">
                     <thead>
                         <tr>
                             <th>Source</th>
@@ -311,7 +311,7 @@ $chartWon    = json_encode(array_map(fn($r) => (int)$r['won'],   $monthlyTrend))
                                 <span style="font-size:12px;font-weight:600;color:var(--navy)"><?= $sConv ?>%</span>
                             </div>
                             <?php else: ?>
-                                <span style="color:var(--text-muted);font-size:12px">—</span>
+                                <span style="color:var(--text-muted);font-size:12px">-</span>
                             <?php endif; ?>
                         </td>
                     </tr>
@@ -336,7 +336,7 @@ $chartWon    = json_encode(array_map(fn($r) => (int)$r['won'],   $monthlyTrend))
                 <?php endif; ?>
             </div>
             <div class="table-wrapper" style="margin:0">
-                <table class="data-table">
+                <table class="data-table table-cards">
                     <thead>
                         <tr>
                             <th>Client</th>
@@ -362,7 +362,7 @@ $chartWon    = json_encode(array_map(fn($r) => (int)$r['won'],   $monthlyTrend))
                             <?php endif; ?>
                         </td>
                         <td style="font-size:13px">
-                            <?= $deal['project'] ? Security::e($deal['project']) : '—' ?>
+                            <?= $deal['project'] ? Security::e($deal['project']) : '-' ?>
                             <?php if (!empty($deal['block']) || !empty($deal['unit_no'])): ?>
                                 <div style="font-size:11px;color:var(--text-muted)"><?= Security::e(trim(($deal['block'] ?? '') . ' ' . ($deal['unit_no'] ?? ''))) ?></div>
                             <?php endif; ?>
@@ -375,10 +375,10 @@ $chartWon    = json_encode(array_map(fn($r) => (int)$r['won'],   $monthlyTrend))
                             <?php endif; ?>
                         </td>
                         <td style="font-weight:600;color:var(--navy)">
-                            <?= $dealAmt > 0 ? 'Rs. ' . number_format($dealAmt) : '—' ?>
+                            <?= $dealAmt > 0 ? 'Rs. ' . number_format($dealAmt) : '-' ?>
                         </td>
                         <td style="color:<?= $isMature ? '#10b981' : '#f59e0b' ?>;font-weight:500">
-                            <?= $dealComm > 0 ? 'Rs. ' . number_format($dealComm) : '—' ?>
+                            <?= $dealComm > 0 ? 'Rs. ' . number_format($dealComm) : '-' ?>
                         </td>
                         <td style="font-size:12px;color:var(--text-muted)"><?= date('d M Y', strtotime($deal['updated_at'])) ?></td>
                         <td><a href="<?= APP_URL ?>/admin/lead/<?= (int)$deal['id'] ?>" class="btn btn-secondary btn-sm">View</a></td>
@@ -395,10 +395,10 @@ $chartWon    = json_encode(array_map(fn($r) => (int)$r['won'],   $monthlyTrend))
         <!-- All Leads Table -->
         <div class="card" style="padding:0">
             <div style="padding:14px 18px 12px;border-bottom:1px solid var(--border);font-size:14px;font-weight:600;color:var(--navy)">
-                All Leads<?= $month ? ' — ' . Security::e($month) : '' ?> (<?= count($agentLeads) ?>)
+                All Leads<?= $month ? ' - ' . Security::e($month) : '' ?> (<?= count($agentLeads) ?>)
             </div>
             <div class="table-wrapper" style="margin:0">
-                <table class="data-table">
+                <table class="data-table table-cards">
                     <thead>
                         <tr><th>Name / Phone</th><th>Project</th><th>Category</th><th>Status</th><th>Date</th><th></th></tr>
                     </thead>
@@ -411,8 +411,8 @@ $chartWon    = json_encode(array_map(fn($r) => (int)$r['won'],   $monthlyTrend))
                                     <div style="font-size:11px;color:var(--text-muted)"><?= Security::e($row['phone']) ?></div>
                                 <?php endif; ?>
                             </td>
-                            <td style="font-size:13px"><?= $row['project'] ? Security::e($row['project']) : '—' ?></td>
-                            <td style="font-size:13px"><?= $row['category'] ? Security::e($row['category']) : '—' ?></td>
+                            <td style="font-size:13px"><?= $row['project'] ? Security::e($row['project']) : '-' ?></td>
+                            <td style="font-size:13px"><?= $row['category'] ? Security::e($row['category']) : '-' ?></td>
                             <td>
                                 <span class="status-pill" style="background:<?= Security::e($row['status_color']) ?>22;color:<?= Security::e($row['status_color']) ?>;border:1px solid <?= Security::e($row['status_color']) ?>44">
                                     <?= Security::e($row['status_name']) ?>

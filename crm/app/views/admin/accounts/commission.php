@@ -1,5 +1,6 @@
 <?php
 Security::requireAdmin();
+$js = fn($v) => json_encode($v, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP);
 
 $pageTitle  = 'Accounts - Commission';
 $activePage = 'accounts';
@@ -47,7 +48,7 @@ ob_start();
 </div>
 
 <!-- Sub-nav -->
-<div style="display:flex;gap:4px;margin-bottom:28px;border-bottom:2px solid var(--border)">
+<div class="sub-nav" style="display:flex;gap:4px;margin-bottom:28px;border-bottom:2px solid var(--border)">
     <?php foreach ([
         [APP_URL.'/admin/accounts',            'Overview',   false],
         [APP_URL.'/admin/accounts/commission', 'Commission', true],
@@ -148,7 +149,7 @@ ob_start();
 <div style="padding:48px;text-align:center;color:var(--text-muted)">No commission records found.</div>
 <?php else: ?>
 <div style="overflow-x:auto">
-<table class="data-table" style="min-width:1000px">
+<table class="data-table table-cards" style="min-width:1000px">
     <thead>
         <tr>
             <th>Agent</th>
@@ -219,7 +220,7 @@ ob_start();
         </td>
         <td>
             <div style="display:flex;gap:6px">
-                <button class="btn btn-sm" onclick='editComm(<?= json_encode($c) ?>)'>Edit</button>
+                <button class="btn btn-sm" onclick='editComm(<?= $js($c) ?>)'>Edit</button>
                 <form method="POST" action="<?= APP_URL ?>/admin/accounts/commission" style="margin:0">
                     <?= Security::csrfField() ?>
                     <input type="hidden" name="form_action"   value="delete">

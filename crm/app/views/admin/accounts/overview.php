@@ -34,7 +34,7 @@ $totalGen  = (float)($expStats['general']  ?? 0);
 </div>
 
 <!-- Sub-nav tabs -->
-<div style="display:flex;gap:4px;margin-bottom:28px;border-bottom:2px solid var(--border)">
+<div class="sub-nav" style="display:flex;gap:4px;margin-bottom:28px;border-bottom:2px solid var(--border)">
     <?php foreach ([
         [APP_URL.'/admin/accounts',            'Overview',   true],
         [APP_URL.'/admin/accounts/commission', 'Commission', false],

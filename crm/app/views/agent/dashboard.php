@@ -2,6 +2,7 @@
 Security::requireLogin();
 require_once __DIR__ . '/../../models/Lead.php';
 require_once __DIR__ . '/../../models/Team.php';
+require_once __DIR__ . '/../../helpers/CallUi.php';
 
 $leadModel  = new Lead();
 $agentId    = (int)$_SESSION['user_id'];
@@ -15,7 +16,7 @@ $todayDate    = date('Y-m-d');
 $overdueCount = count(array_filter($followUps, fn($f) => strtotime($f['scheduled_at']) < $now));
 $todayCount   = count(array_filter($followUps, fn($f) => strtotime($f['scheduled_at']) >= $now && date('Y-m-d', strtotime($f['scheduled_at'])) === $todayDate));
 
-// Sales manager — load team data
+// Sales manager - load team data
 $myTeam      = null;
 $teamMembers = [];
 $teamStats   = [];
@@ -83,22 +84,27 @@ ob_start();
 </div>
 
 <div class="table-wrapper">
-    <table class="data-table">
+    <table class="data-table table-cards">
         <thead>
             <tr><th>Lead</th><th>Phone</th><th>Priority</th><th>Status</th><th>Date</th><th></th></tr>
         </thead>
         <tbody>
         <?php foreach ($myLeads as $row): ?>
             <tr onclick="window.location='<?= APP_URL ?>/agent/lead/<?= (int)$row['id'] ?>'">
-                <td>
-                    <div class="lead-name"><?= Security::e($row['name']) ?></div>
+                <td class="tc-title">
+                    <div class="lead-name"><?= Security::e($row['name'] ?? 'Unknown') ?></div>
                     <?php if ($row['email']): ?><div class="lead-sub"><?= Security::e($row['email']) ?></div><?php endif; ?>
                 </td>
-                <td><?= Security::e($row['phone'] ?? '—') ?></td>
+                <td><?= Security::e($row['phone'] ?? '-') ?></td>
                 <td><span class="badge badge-<?= Security::e($row['priority']) ?>"><span class="badge-dot"></span><?= ucfirst(Security::e($row['priority'])) ?></span></td>
                 <td><span class="status-pill" style="background:<?= Security::e($row['status_color']) ?>22;color:<?= Security::e($row['status_color']) ?>;border:1px solid <?= Security::e($row['status_color']) ?>44"><?= Security::e($row['status_name']) ?></span></td>
                 <td style="color:var(--text-muted);font-size:12px"><?= date('d M Y', strtotime($row['created_at'])) ?></td>
-                <td><a href="<?= APP_URL ?>/agent/lead/<?= (int)$row['id'] ?>" onclick="event.stopPropagation()">Open</a></td>
+                <td class="tc-actions">
+                    <div style="display:flex;gap:6px">
+                        <?= CallUi::button($row['phone'], (int)$row['id']) ?>
+                        <a href="<?= APP_URL ?>/agent/lead/<?= (int)$row['id'] ?>" class="btn btn-secondary btn-sm" onclick="event.stopPropagation()">Open</a>
+                    </div>
+                </td>
             </tr>
         <?php endforeach; ?>
         <?php if (empty($myLeads)): ?>
@@ -123,7 +129,7 @@ ob_start();
     <a href="<?= APP_URL ?>/agent/followups">View All &rarr;</a>
 </div>
 <div class="table-wrapper">
-    <table class="data-table">
+    <table class="data-table table-cards">
         <thead>
             <tr><th>Lead</th><th>Phone</th><th>Scheduled</th><th>Note</th><th></th></tr>
         </thead>
@@ -135,10 +141,10 @@ ob_start();
             $isToday = !$overdue && date('Y-m-d', $fupTs) === $todayDate;
             ?>
             <tr>
-                <td>
+                <td class="tc-title">
                     <a href="<?= APP_URL ?>/agent/lead/<?= (int)$fup['lead_id'] ?>" class="lead-name" style="color:var(--navy)"><?= Security::e($fup['lead_name']) ?></a>
                 </td>
-                <td style="font-size:12px;color:var(--text-muted)"><?= Security::e($fup['lead_phone'] ?? '—') ?></td>
+                <td style="font-size:12px;color:var(--text-muted)"><?= Security::e($fup['lead_phone'] ?? '-') ?></td>
                 <td>
                     <span style="font-size:12px;<?= $overdue ? 'color:#dc2626;font-weight:600' : ($isToday ? 'color:#d97706;font-weight:600' : 'color:var(--text-muted)') ?>">
                         <?= date('d M Y, h:i A', strtotime($fup['scheduled_at'])) ?>
@@ -147,14 +153,17 @@ ob_start();
                         <?php endif; ?>
                     </span>
                 </td>
-                <td style="font-size:12px;color:var(--text-muted)"><?= Security::e($fup['note'] ?? '—') ?></td>
-                <td>
-                    <form method="POST" action="<?= APP_URL ?>/agent/lead/<?= (int)$fup['lead_id'] ?>">
-                        <?= Security::csrfField() ?>
-                        <input type="hidden" name="action" value="done_followup">
-                        <input type="hidden" name="followup_id" value="<?= (int)$fup['id'] ?>">
-                        <button type="submit" class="btn btn-secondary btn-sm">Mark Done</button>
-                    </form>
+                <td class="tc-full" style="font-size:12px;color:var(--text-muted)"><?= Security::e($fup['note'] ?? '-') ?></td>
+                <td class="tc-actions">
+                    <div style="display:flex;gap:6px">
+                        <?= CallUi::button($fup['lead_phone'] ?? null, (int)$fup['lead_id']) ?>
+                        <form method="POST" action="<?= APP_URL ?>/agent/lead/<?= (int)$fup['lead_id'] ?>">
+                            <?= Security::csrfField() ?>
+                            <input type="hidden" name="action" value="done_followup">
+                            <input type="hidden" name="followup_id" value="<?= (int)$fup['id'] ?>">
+                            <button type="submit" class="btn btn-secondary btn-sm">Mark Done</button>
+                        </form>
+                    </div>
                 </td>
             </tr>
         <?php endforeach; ?>
@@ -167,7 +176,7 @@ ob_start();
 <div class="card" style="margin-top:24px;padding:0">
     <div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
         <div style="font-size:15px;font-weight:600;color:var(--navy)">
-            My Team — <?= Security::e($myTeam['name']) ?>
+            My Team - <?= Security::e($myTeam['name']) ?>
         </div>
         <div style="display:flex;gap:16px;font-size:13px">
             <span style="color:#10b981;font-weight:600"><?= (int)($teamStats['st_won'] ?? 0) ?> Won</span>
@@ -178,7 +187,7 @@ ob_start();
         <div style="padding:24px;text-align:center;color:var(--text-muted);font-size:13px">No agents assigned to your team yet.</div>
     <?php else: ?>
     <div class="table-wrapper" style="margin:0">
-        <table class="data-table">
+        <table class="data-table table-cards">
             <thead>
                 <tr>
                     <th>Agent</th>
@@ -196,7 +205,7 @@ ob_start();
                 $mConv   = $mClosed > 0 ? round(($mWon / $mClosed) * 100) : 0;
             ?>
             <tr>
-                <td>
+                <td class="tc-title">
                     <div style="display:flex;align-items:center;gap:9px">
                         <div class="sidebar-avatar" style="width:30px;height:30px;font-size:12px"><?= strtoupper(substr($m['name'],0,1)) ?></div>
                         <div>

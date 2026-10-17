@@ -1,7 +1,8 @@
 <?php
 Security::requireAdmin();
+$js = fn($v) => json_encode($v, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP);
 
-$pageTitle  = 'Accounts — Expenses';
+$pageTitle  = 'Accounts - Expenses';
 $activePage = 'accounts';
 
 $pkr        = fn($v) => 'PKR ' . number_format((float)$v, 0);
@@ -123,7 +124,7 @@ ob_start();
 </div>
 
 <!-- Sub-nav -->
-<div class="sub-nav-wrap" style="display:flex;gap:4px;margin-bottom:28px;border-bottom:2px solid var(--border)">
+<div class="sub-nav sub-nav-wrap" style="display:flex;gap:4px;margin-bottom:28px;border-bottom:2px solid var(--border)">
     <?php foreach ([
         [APP_URL.'/admin/accounts',            'Overview',   false],
         [APP_URL.'/admin/accounts/commission', 'Commission', false],
@@ -235,7 +236,7 @@ ob_start();
 <div style="padding:48px;text-align:center;color:var(--text-muted)">No expenses found for this period.</div>
 <?php else: ?>
 <div style="overflow-x:auto">
-<table class="data-table" style="min-width:700px">
+<table class="data-table table-cards" style="min-width:700px">
     <thead>
         <tr>
             <th>#</th>
@@ -266,7 +267,7 @@ ob_start();
         <td style="font-size:12px;color:var(--text-muted)"><?= Security::e($e['created_by_name'] ?? '-') ?></td>
         <td class="no-print">
             <div style="display:flex;gap:6px">
-                <button class="btn btn-sm" onclick='editExp(<?= json_encode($e) ?>)'>Edit</button>
+                <button class="btn btn-sm" onclick='editExp(<?= $js($e) ?>)'>Edit</button>
                 <form method="POST" action="<?= APP_URL ?>/admin/accounts/expenses" style="margin:0">
                     <?= Security::csrfField() ?>
                     <input type="hidden" name="form_action" value="delete">

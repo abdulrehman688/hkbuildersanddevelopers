@@ -93,7 +93,7 @@ $totalBooking = (float)($teamStats['total_booking'] ?? 0);
         <div style="padding:32px;text-align:center;color:var(--text-muted);font-size:13px">No agents in your team yet.</div>
     <?php else: ?>
     <div class="table-wrapper" style="margin:0">
-        <table class="data-table">
+        <table class="data-table table-cards">
             <thead>
                 <tr>
                     <th>Agent</th>
@@ -141,7 +141,7 @@ $totalBooking = (float)($teamStats['total_booking'] ?? 0);
                         <span style="font-size:12px;font-weight:600;color:var(--navy)"><?= $mConv ?>%</span>
                     </div>
                     <?php else: ?>
-                        <span style="color:var(--text-muted);font-size:12px">—</span>
+                        <span style="color:var(--text-muted);font-size:12px">-</span>
                     <?php endif; ?>
                 </td>
                 <td>
@@ -162,10 +162,10 @@ $totalBooking = (float)($teamStats['total_booking'] ?? 0);
     <?php endif; ?>
 </div>
 
-<!-- Quick comparison chart — leads per agent -->
+<!-- Quick comparison chart - leads per agent -->
 <?php if (!empty($teamMembers)): ?>
 <div class="card" style="padding:20px">
-    <div style="font-size:14px;font-weight:600;color:var(--navy);margin-bottom:16px">Won vs Total — Agent Comparison</div>
+    <div style="font-size:14px;font-weight:600;color:var(--navy);margin-bottom:16px">Won vs Total - Agent Comparison</div>
     <canvas id="teamChart" height="80"></canvas>
 </div>
 
@@ -219,7 +219,7 @@ $totalBooking = (float)($teamStats['total_booking'] ?? 0);
     .sidebar,.hamburger-btn,.sidebar-overlay,.page-header-actions { display:none !important }
     .main-content { margin:0 !important; padding:20px !important }
     body::before {
-        content: "HK Builders & Developers — Team Report — <?= Security::e($myTeam['name'] ?? '') ?> — <?= date('d M Y') ?>";
+        content: "HK Builders & Developers Team Report <?= Security::e($myTeam['name'] ?? '') ?> - <?= date('d M Y') ?>";
         display:block; font-size:13px; color:#666; margin-bottom:16px;
         border-bottom:2px solid #c9a84c; padding-bottom:10px;
     }

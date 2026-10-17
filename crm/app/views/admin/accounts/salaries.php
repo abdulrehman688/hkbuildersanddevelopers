@@ -1,7 +1,8 @@
 <?php
 Security::requireAdmin();
+$js = fn($v) => json_encode($v, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP);
 
-$pageTitle  = 'Accounts — Salaries';
+$pageTitle  = 'Accounts - Salaries';
 $activePage = 'accounts';
 
 $monthNames = ['','January','February','March','April','May','June','July','August','September','October','November','December'];
@@ -43,7 +44,7 @@ ob_start();
 </div>
 
 <!-- Sub-nav -->
-<div style="display:flex;gap:4px;margin-bottom:28px;border-bottom:2px solid var(--border)">
+<div class="sub-nav" style="display:flex;gap:4px;margin-bottom:28px;border-bottom:2px solid var(--border)">
     <?php foreach ([
         [APP_URL.'/admin/accounts',            'Overview',   false],
         [APP_URL.'/admin/accounts/commission', 'Commission', false],
@@ -110,7 +111,7 @@ ob_start();
 <?php if (empty($salaries)): ?>
 <div style="padding:48px;text-align:center;color:var(--text-muted)">No salary records found.</div>
 <?php else: ?>
-<table class="data-table">
+<table class="data-table table-cards">
     <thead>
         <tr>
             <th>Name / Staff</th>
@@ -133,7 +134,7 @@ ob_start();
         <td style="font-size:12px;color:var(--text-muted)"><?= Security::e($s['created_by_name'] ?? '-') ?></td>
         <td>
             <div style="display:flex;gap:6px">
-                <button class="btn btn-sm" onclick='editSal(<?= json_encode($s) ?>)'>Edit</button>
+                <button class="btn btn-sm" onclick='editSal(<?= $js($s) ?>)'>Edit</button>
                 <form method="POST" action="<?= APP_URL ?>/admin/accounts/salaries" style="margin:0">
                     <?= Security::csrfField() ?>
                     <input type="hidden" name="form_action" value="delete">

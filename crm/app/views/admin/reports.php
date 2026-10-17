@@ -78,7 +78,7 @@ ob_start();
             <?php endif; ?>
 
             <!-- Quick ranges -->
-            <div style="display:flex;gap:6px;margin-left:8px">
+            <div style="display:flex;flex-wrap:wrap;gap:6px;margin-left:8px">
                 <?php
                 $ranges = [
                     'Today'      => [date('Y-m-d'), date('Y-m-d')],
@@ -159,7 +159,7 @@ $lbBaseUrl = APP_URL . '/admin/reports' . ($dateFrom || $dateTo ? '?date_from=' 
     </div>
 </div>
 <div class="table-wrapper" style="margin-bottom:28px">
-    <table class="data-table">
+    <table class="data-table table-cards">
         <thead>
             <tr>
                 <th style="width:50px;text-align:center">Rank</th>
@@ -203,7 +203,7 @@ $lbBaseUrl = APP_URL . '/admin/reports' . ($dateFrom || $dateTo ? '?date_from=' 
                 </div>
             </td>
             <td style="font-size:13px;color:var(--text-muted)">
-                <?= $row['team_name'] ? Security::e($row['team_name']) : '<span style="color:var(--text-muted);opacity:.5">—</span>' ?>
+                <?= $row['team_name'] ? Security::e($row['team_name']) : '<span style="color:var(--text-muted);opacity:.5">-</span>' ?>
             </td>
             <td style="text-align:center;font-weight:600;color:var(--navy)"><?= (int)$row['total'] ?></td>
             <td style="text-align:center">
@@ -219,7 +219,7 @@ $lbBaseUrl = APP_URL . '/admin/reports' . ($dateFrom || $dateTo ? '?date_from=' 
                         <span style="font-size:12px;font-weight:600;color:var(--navy)"><?= $conv ?>%</span>
                     </div>
                 <?php else: ?>
-                    <span style="color:var(--text-muted);font-size:12px">—</span>
+                    <span style="color:var(--text-muted);font-size:12px">-</span>
                 <?php endif; ?>
             </td>
         </tr>
@@ -235,7 +235,7 @@ $lbBaseUrl = APP_URL . '/admin/reports' . ($dateFrom || $dateTo ? '?date_from=' 
     <div class="form-card">
         <div class="form-card-header">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.28m5.94 2.28l-2.28 5.941"/></svg>
-            <h3>Lead Volume — Last 30 Days</h3>
+            <h3>Lead Volume - Last 30 Days</h3>
         </div>
         <div class="form-card-body">
             <div class="bar-chart">
@@ -288,7 +288,7 @@ $lbBaseUrl = APP_URL . '/admin/reports' . ($dateFrom || $dateTo ? '?date_from=' 
 <!-- Agent Performance -->
 <div class="section-header"><h2>Agent Performance</h2></div>
 <div class="table-wrapper" style="margin-bottom:24px">
-    <table class="data-table">
+    <table class="data-table table-cards">
         <thead>
             <tr>
                 <th>Agent</th>
@@ -335,7 +335,7 @@ $lbBaseUrl = APP_URL . '/admin/reports' . ($dateFrom || $dateTo ? '?date_from=' 
                     <?php endif; ?>
                 </td>
                 <td style="color:var(--text-muted);font-size:12px">
-                    <?= $agent['last_activity'] ? date('d M Y', strtotime($agent['last_activity'])) : '—' ?>
+                    <?= $agent['last_activity'] ? date('d M Y', strtotime($agent['last_activity'])) : '-' ?>
                 </td>
                 <td>
                     <a href="<?= APP_URL ?>/admin/agent/<?= (int)$agent['id'] ?>" class="btn btn-secondary btn-sm">View Details</a>
@@ -352,7 +352,7 @@ $lbBaseUrl = APP_URL . '/admin/reports' . ($dateFrom || $dateTo ? '?date_from=' 
 <!-- Lead Source Breakdown -->
 <div class="section-header"><h2>Lead Source Breakdown</h2></div>
 <div class="table-wrapper">
-    <table class="data-table">
+    <table class="data-table table-cards">
         <thead>
             <tr>
                 <th>Source</th>
@@ -392,7 +392,7 @@ $lbBaseUrl = APP_URL . '/admin/reports' . ($dateFrom || $dateTo ? '?date_from=' 
                             <span style="font-size:12px;font-weight:600;color:var(--navy)"><?= $conv ?>%</span>
                         </div>
                     <?php else: ?>
-                        <span style="color:var(--text-muted);font-size:12px">—</span>
+                        <span style="color:var(--text-muted);font-size:12px">-</span>
                     <?php endif; ?>
                 </td>
             </tr>

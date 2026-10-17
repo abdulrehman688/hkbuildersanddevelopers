@@ -172,7 +172,7 @@ ob_start();
 
 <!-- Notices Table -->
 <div class="table-wrapper">
-    <table class="data-table">
+    <table class="data-table table-cards">
         <thead>
             <tr>
                 <th>Type</th>
@@ -207,7 +207,7 @@ ob_start();
                     <div class="lead-name" style="font-size:12px"><?= date('d M Y', strtotime($notice['created_at'])) ?></div>
                     <div class="lead-sub"><?= date('g:i A', strtotime($notice['created_at'])) ?></div>
                 </td>
-                <td style="font-size:13px"><?= $notice['creator_name'] ? Security::e($notice['creator_name']) : '<span style="color:var(--text-muted)">—</span>' ?></td>
+                <td style="font-size:13px"><?= $notice['creator_name'] ? Security::e($notice['creator_name']) : '<span style="color:var(--text-muted)">-</span>' ?></td>
                 <td>
                     <?php if ($notice['attachment']): ?>
                         <a href="<?= APP_URL ?>/uploads/notices/<?= Security::e($notice['attachment']) ?>" download class="btn btn-secondary btn-sm">
@@ -215,7 +215,7 @@ ob_start();
                             File
                         </a>
                     <?php else: ?>
-                        <span style="color:var(--text-muted);font-size:12px">—</span>
+                        <span style="color:var(--text-muted);font-size:12px">-</span>
                     <?php endif; ?>
                 </td>
                 <td>
@@ -236,7 +236,7 @@ ob_start();
                             </div>
                         <?php endforeach; ?>
                     <?php else: ?>
-                        <span style="color:var(--text-muted);font-size:12px">—</span>
+                        <span style="color:var(--text-muted);font-size:12px">-</span>
                     <?php endif; ?>
                 </td>
                 <td>
@@ -262,7 +262,7 @@ ob_start();
         <span style="font-weight:600;font-size:14px;color:var(--navy);font-family:'Cormorant Garamond',serif">All User Activity</span>
         <span style="font-size:12px;color:var(--text-muted)"><?= number_format($actTotal) ?> total events</span>
     </div>
-    <table class="data-table">
+    <table class="data-table table-cards">
         <thead>
             <tr>
                 <th>Time</th>
@@ -303,15 +303,15 @@ ob_start();
             </td>
             <td>
                 <?php if ($ev['lead_id']): ?>
-                    <div class="lead-name" style="color:var(--gold)">Lead #<?= $ev['lead_id'] ?><?= $ev['lead_name'] ? ' — ' . Security::e($ev['lead_name']) : '' ?></div>
+                    <div class="lead-name" style="color:var(--gold)">Lead #<?= $ev['lead_id'] ?><?= $ev['lead_name'] ? ' - ' . Security::e($ev['lead_name']) : '' ?></div>
                     <?php if ($ev['detail']): ?>
                         <div class="lead-sub"><?= Security::e(mb_strimwidth($ev['detail'], 0, 100, '...')) ?></div>
                     <?php endif; ?>
                 <?php else: ?>
-                    <div class="lead-sub"><?= Security::e(trim($ev['detail'] ?? '—')) ?></div>
+                    <div class="lead-sub"><?= Security::e(trim($ev['detail'] ?? '-')) ?></div>
                 <?php endif; ?>
             </td>
-            <td style="font-size:12px;color:var(--text-muted);white-space:nowrap;font-family:monospace"><?= Security::e($ev['ip_address'] ?? '—') ?></td>
+            <td style="font-size:12px;color:var(--text-muted);white-space:nowrap;font-family:monospace"><?= Security::e($ev['ip_address'] ?? '-') ?></td>
         </tr>
         <?php endforeach; ?>
         </tbody>
@@ -365,7 +365,7 @@ ob_start();
                     <textarea name="message" rows="5" placeholder="Write your message here..." required></textarea>
                 </div>
                 <div class="form-group">
-                    <label>Attachment <span class="form-hint">PDF, Word, Excel, Image, ZIP — max 10 MB</span></label>
+                    <label>Attachment <span class="form-hint">PDF, Word, Excel, Image, ZIP - max 10 MB</span></label>
                     <input type="file" name="attachment" accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg,.gif,.zip">
                 </div>
             </div>
