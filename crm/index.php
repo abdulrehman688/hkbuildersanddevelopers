@@ -73,6 +73,14 @@ if ($action === 'call-log' && in_array($section, ['admin', 'agent'], true)) {
     exit;
 }
 
+// Agent location ping (JSON), sent while an agent is logged in
+if ($section === 'agent' && $action === 'location') {
+    Security::requireLogin();
+    require_once APP_ROOT . '/app/controllers/LocationController.php';
+    (new LocationController())->save();
+    exit;
+}
+
 // Distribute Leads: admin (all agents) or sales manager (own team)
 if ($action === 'distribute' && in_array($section, ['admin', 'agent'], true)) {
     $section === 'admin' ? Security::requireAdmin() : Security::requireLogin();
@@ -109,6 +117,7 @@ if ($section === 'admin') {
         'client'       => $ctrl->clientDetail((int)$param),
         'followups'    => $ctrl->followups(),
         'calls'        => $ctrl->calls(),
+        'locations'    => $ctrl->locations(),
         'notices'      => $ctrl->notices(),
         'reports'      => $ctrl->reports(),
         'csv-template' => $ctrl->downloadCsvTemplate(),

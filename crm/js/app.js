@@ -212,6 +212,79 @@ document.querySelectorAll('table.table-cards').forEach(function(table) {
     if (getPending()) setTimeout(showPopup, 300);
 })();
 
+// ---- Agent location (agents and sales managers only) ----------
+// While an agent is logged in and the CRM is open, send the position at
+// most once a minute: every 3 minutes, or sooner after moving 150 m.
+// The top bar badge shows whether sharing works.
+(function() {
+    var meta  = document.querySelector('meta[name="location-endpoint"]');
+    var badge = document.getElementById('locBadge');
+    if (!meta || !badge) return;
+
+    var endpoint = meta.content;
+    var csrf     = (document.querySelector('meta[name="csrf-token"]') || {}).content || '';
+    var EVERY_MS = 3 * 60 * 1000, MIN_MS = 60 * 1000, MOVE_M = 150;
+    var lastSent = 0, lastPos = null, battery = null;
+    var label = badge.querySelector('span');
+
+    var states = {
+        on:      ['loc-on',  'Location on',  'Your location is shared with admin while you are logged in.'],
+        denied:  ['loc-off', 'Location off', 'Location is blocked. Allow location for this site in your browser or phone settings, then reload the page.'],
+        error:   ['loc-off', 'No location',  'Your phone could not find your location. Turn on Location (GPS) and reload the page.'],
+        nosupport: ['loc-off', 'No location', 'This browser cannot share location.']
+    };
+    var current = null;
+    function setState(s) {
+        current = s;
+        badge.classList.remove('loc-on', 'loc-off');
+        badge.classList.add(states[s][0]);
+        label.textContent = states[s][1];
+        badge.title = states[s][2];
+    }
+    badge.addEventListener('click', function() { if (current) alert(states[current][2]); });
+
+    if (!navigator.geolocation) { setState('nosupport'); return; }
+    if (navigator.getBattery) {
+        navigator.getBattery().then(function(b) {
+            battery = Math.round(b.level * 100);
+            b.addEventListener('levelchange', function() { battery = Math.round(b.level * 100); });
+        }).catch(function() {});
+    }
+
+    function metres(a, b) {
+        var r = 6371000, rad = Math.PI / 180;
+        var dLat = (b.lat - a.lat) * rad, dLng = (b.lng - a.lng) * rad;
+        var h = Math.sin(dLat / 2) * Math.sin(dLat / 2)
+              + Math.cos(a.lat * rad) * Math.cos(b.lat * rad) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
+        return 2 * r * Math.asin(Math.min(1, Math.sqrt(h)));
+    }
+
+    function onPosition(pos, force) {
+        setState('on');
+        var p = { lat: pos.coords.latitude, lng: pos.coords.longitude, acc: pos.coords.accuracy };
+        var now = Date.now();
+        if (now - lastSent < MIN_MS) return;
+        if (!force && lastPos && now - lastSent < EVERY_MS && metres(lastPos, p) < MOVE_M) return;
+        lastSent = now;
+        lastPos = p;
+        var fd = new FormData();
+        fd.append('lat', p.lat);
+        fd.append('lng', p.lng);
+        fd.append('accuracy', Math.round(p.acc));
+        if (battery !== null) fd.append('battery', battery);
+        fetch(endpoint, { method: 'POST', body: fd, credentials: 'same-origin', headers: { 'X-CSRF-Token': csrf } })
+            .catch(function() { lastSent = 0; });   // retry on the next fix
+    }
+    function onError(err) { setState(err.code === 1 ? 'denied' : 'error'); }
+
+    var opts = { enableHighAccuracy: true, maximumAge: 60000, timeout: 30000 };
+    navigator.geolocation.watchPosition(function(p) { onPosition(p, false); }, onError, opts);
+    // Standing still sends no new fixes, so ask again every 3 minutes
+    setInterval(function() {
+        navigator.geolocation.getCurrentPosition(function(p) { onPosition(p, true); }, onError, opts);
+    }, EVERY_MS);
+})();
+
 // ---- Reset password modal -----------------------------------
 function openResetModal(agentId, agentName) {
     document.getElementById('resetAgentId').value = agentId;

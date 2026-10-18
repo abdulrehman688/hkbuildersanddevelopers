@@ -790,6 +790,19 @@ input, select, textarea { font-family: 'Jost', sans-serif; max-width: 100%; }
 .call-pill input:checked + span { background: var(--navy); border-color: var(--navy); color: #fff; }
 .call-pill input:focus-visible + span { outline: 2px solid var(--gold); outline-offset: 2px; }
 
+/* Agent location: top bar badge (agents) and admin map */
+.loc-badge {
+  display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 20px;
+  font-family: 'Jost', sans-serif; font-size: 11px; font-weight: 600; cursor: pointer;
+  border: 1px solid var(--border); background: var(--bg); color: var(--text-muted); white-space: nowrap;
+}
+.loc-badge svg { width: 13px; height: 13px; }
+.loc-badge.loc-on  { background: #f0fdf4; color: #16a34a; border-color: #bbf7d0; }
+.loc-badge.loc-off { background: #fef2f2; color: #dc2626; border-color: #fecaca; }
+.agent-map { height: 480px; width: 100%; isolation: isolate; }  /* isolate keeps the map under the phone sidebar */
+.agent-label { font-family: 'Jost', sans-serif; font-size: 11px; font-weight: 600; padding: 1px 6px; }
+@media (max-width: 768px) { .agent-map { height: 360px; } }
+
 /* Distribute Leads: agent tick boxes, lead checkboxes, bulk assign bar */
 .dist-agents { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 8px; }
 .dist-agent {

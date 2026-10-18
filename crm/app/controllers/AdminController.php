@@ -649,6 +649,10 @@ class AdminController {
         require_once __DIR__ . '/../views/admin/calls.php';
     }
 
+    public function locations(): void {
+        require_once __DIR__ . '/../views/admin/locations.php';
+    }
+
     public function reports(): void {
         if (($_GET['export'] ?? '') === 'csv') {
             $this->exportLeadsCsv();

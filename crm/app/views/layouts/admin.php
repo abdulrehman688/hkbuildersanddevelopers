@@ -25,6 +25,9 @@ $_section = ($_SESSION['user_role'] ?? '') === 'admin' ? 'admin' : 'agent';
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="<?= Security::e(Security::generateCsrfToken()) ?>">
     <meta name="call-endpoint" content="<?= APP_URL ?>/<?= $_section ?>/call-log">
+    <?php if (in_array($_SESSION['user_role'] ?? '', ['agent', 'sales_manager'], true)): ?>
+    <meta name="location-endpoint" content="<?= APP_URL ?>/agent/location">
+    <?php endif; ?>
     <title><?= $_notifTotal > 0 ? "({$_notifTotal}) " : '' ?><?= isset($pageTitle) ? Security::e($pageTitle) . ' - ' : '' ?>HK Builders CRM</title>
     <link rel="icon" type="image/svg+xml" href="<?= APP_URL ?>/favicon.svg">
     <link rel="stylesheet" href="<?= APP_URL ?>/css/app.css">
@@ -65,6 +68,10 @@ $_section = ($_SESSION['user_role'] ?? '') === 'admin' ? 'admin' : 'agent';
         <a href="<?= APP_URL ?>/admin/clients" class="<?= ($activePage ?? '') === 'clients' ? 'active' : '' ?>">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z"/></svg>
             Clients
+        </a>
+        <a href="<?= APP_URL ?>/admin/locations" class="<?= ($activePage ?? '') === 'locations' ? 'active' : '' ?>">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z"/></svg>
+            Agent Locations
         </a>
         <a href="<?= APP_URL ?>/admin/calls" class="<?= ($activePage ?? '') === 'calls' ? 'active' : '' ?>">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 01-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z"/></svg>
@@ -197,6 +204,12 @@ $_section = ($_SESSION['user_role'] ?? '') === 'admin' ? 'admin' : 'agent';
             <span class="topbar-title"><?= Security::e($pageTitle ?? 'Dashboard') ?></span>
         </div>
         <div class="topbar-right">
+            <?php if ($_section === 'agent'): ?>
+            <button type="button" id="locBadge" class="loc-badge" title="Your location is shared with admin while you are logged in">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z"/></svg>
+                <span>Location…</span>
+            </button>
+            <?php endif; ?>
             <span class="topbar-badge"><?= match($_SESSION['user_role'] ?? '') { 'admin' => 'Administrator', 'sales_manager' => 'Sales Manager', default => 'Sales Agent' } ?></span>
         </div>
     </div>

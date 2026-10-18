@@ -66,11 +66,11 @@ Open the XAMPP Control Panel and start **Apache** and **MySQL**. Then pick one:
 cd C:\xampp\htdocs\hkbuildersanddevelopers\crm\database
 $mysql = "C:\xampp\mysql\bin\mysql.exe"
 & $mysql -u root -e "CREATE DATABASE crm_system CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"
-foreach ($f in "full_install.sql", "migrations/accounts_tables.sql", "migrations/builders_tables.sql", "migrations/builder_units.sql", "migrations/commission_payments_v2.sql", "migrations/builder_units_v2.sql", "migrations/contact_logs.sql") {
+foreach ($f in "full_install.sql", "migrations/accounts_tables.sql", "migrations/builders_tables.sql", "migrations/builder_units.sql", "migrations/commission_payments_v2.sql", "migrations/builder_units_v2.sql", "migrations/contact_logs.sql", "migrations/agent_locations.sql") {
     & $mysql -u root crm_system -e "source $f"
 }
 ```
-This creates 23 tables plus sample users and leads (no sample clients). The sample admin login is in the "Done! Login" comment at the end of `crm/database/full_install.sql`.
+This creates 24 tables plus sample users and leads (no sample clients). The sample admin login is in the "Done! Login" comment at the end of `crm/database/full_install.sql`.
 
 ### 3.4 Run it
 - **One-time CRM junction (required).** `crm/.htaccess` uses `RewriteBase /crm/` (correct for production), so locally `/crm` must also exist inside htdocs. Without it every CRM page except real files returns 404. No admin rights needed:
@@ -117,8 +117,8 @@ crm/
   .htaccess               RewriteBase /crm/, everything to index.php?url=..., security headers
   config/config.php       environment detection, DB credentials, APP_URL, timezone
   config/database.php     PDO singleton
-  app/controllers/        AdminController, AgentController, AuthController, AccountsController, BuildersController, CallController, DistributeController
-  app/models/             Lead, User, Team, Client, Notice, Accounts, Builder, ContactLog, LeadDistributor
+  app/controllers/        AdminController, AgentController, AuthController, AccountsController, BuildersController, CallController, DistributeController, LocationController
+  app/models/             Lead, User, Team, Client, Notice, Accounts, Builder, ContactLog, LeadDistributor, AgentLocation
   app/helpers/            Security, AuditLog, CsvImporter, CallUi (Call button, call popup, Contact History card)
   app/views/admin/        admin pages (accounts/ and builders/ subfolders)
   app/views/agent/        agent and sales manager pages
@@ -150,12 +150,13 @@ crm/
 | URL | Handler |
 |---|---|
 | `/login`, `/logout` | AuthController |
-| `/admin/{dashboard, leads, lead/{id}, agents, agent/{id}, teams, clients, client/{id}, followups, calls, notices, reports, csv-template, password, audit}` | AdminController |
+| `/admin/{dashboard, leads, lead/{id}, agents, agent/{id}, teams, clients, client/{id}, followups, calls, locations, notices, reports, csv-template, password, audit}` | AdminController |
 | `/admin/accounts[/commission, /commission-ajax, /expenses, /salaries]` | AccountsController |
 | `/admin/builders[/projects, /units, /payments, /detail/{id}, /statement/{id}]` | BuildersController |
 | `/agent/{dashboard, leads, pool, clients, lead/{id}[/convert], claim/{id}, team, team-agent/{id}, followups, notices, password}` | AgentController |
 | `/admin/notif-count`, `/agent/notif-count` | JSON for follow-up notification polling |
 | `/admin/distribute`, `/agent/distribute` | DistributeController: Distribute Leads page (admin: all agents; sales manager: own team) |
+| `/agent/location` | LocationController: JSON location ping (agents and sales managers; one point as form fields, or `{"points":[...]}` from the Android app) |
 | `/admin/call-log`, `/agent/call-log` | CallController, JSON behind the Call button (`action=start` / `finish`), CSRF token in the `X-CSRF-Token` header |
 
 **Config:** `APP_ENV` is `production` when the host contains `hkbuildersanddevelopers.com`, otherwise `development` (shows PHP errors). That decides the DB credentials and `APP_URL`. Timezone is `Asia/Karachi`, and the PDO session runs at `+05:00`. Never save a PHP file with a UTF-8 BOM: the BOM bytes are printed before any output and break JSON responses (`config.php` and `database.php` had BOMs until 2026-10-18).
@@ -176,6 +177,7 @@ crm/
 
 ## 7. CRM modules
 
+- **Agent location** (`agent_locations`): while an agent or sales manager is logged in and the CRM is open, `js/app.js` sends their position (with accuracy and battery) at most once a minute: every 3 minutes, or sooner after moving 150 m. The server also skips web points less than 60 s apart. A top bar badge shows Location on / off; tapping it explains how to allow location. Admin **Agent Locations** (`/admin/locations`): Leaflet + OpenStreetMap from cdnjs, no API key; live map of each agent's last position (green = point in the last 15 minutes, grey = older), refreshed every minute from `?format=json`; table with status, last seen, accuracy, battery; **Route** for one agent and day (`?agent_id=&date=`) with start/last markers, first/last seen and distance (fixes worse than 500 m are left out of the line and the distance). A browser only sends points while the page is open; the Android app (phase 4) will send background points through the same endpoint (`source = app`, deduplicated by `device_point_id`).
 - **Distribute Leads** (`/admin/distribute`, sales managers `/agent/distribute`): **Share Equally** deals unassigned leads one by one (hot first, then oldest) to the ticked agents, so each gets the same number; leftovers go to the agents with the fewest open leads (open = status not closed). Admin can pick any active agent or sales manager (agents ticked by default); a sales manager only the agents in their team. **Assign by Hand**: tick leads, pick an agent. Admin can also tick leads on All Leads and assign or reassign them in bulk. A lead is only taken while still unassigned, so a pool claim at the same moment wins and the lead is skipped. Every assignment adds a timeline entry ("Assigned to X by Y (auto distribute / manual / bulk)") and one audit log row. The pool and claiming stay as before.
 - **Leads:** pool and claiming, assignment, statuses, sources, activity timeline, CSV import (template at `/admin/csv-template`), follow-ups and meetings. Overdue follow-ups show as a page banner, a sidebar badge and a count in the tab title; the browser polls `notif-count`.
 - **Clients:** a lead converts to a client "file" with `file_status` mature/immature (plus a reason) and a booking amount. Agents see their own clients at `/agent/clients`.
@@ -200,7 +202,7 @@ crm/
 ## 8. Database
 
 - **Local:** `crm_system` (user `root`, no password). **Production:** `u813506845_crm` on Hostinger (MariaDB-style errors such as errno 150). Credentials live in `crm/config/config.php`; never copy them anywhere else.
-- **23 tables:** users, teams, leads, lead_sources, lead_statuses, lead_activities, follow_ups, import_batches, clients, client_payments, notices, notice_completions, audit_log, commission_payments, commission_pending_reason, expenses, builders, builder_projects, builder_units, builder_payments, contact_logs, plus legacy `salaries` and `income` (the code doesn't use them).
+- **24 tables:** users, teams, leads, lead_sources, lead_statuses, lead_activities, follow_ups, import_batches, clients, client_payments, notices, notice_completions, audit_log, commission_payments, commission_pending_reason, expenses, builders, builder_projects, builder_units, builder_payments, contact_logs, agent_locations, plus legacy `salaries` and `income` (the code doesn't use them).
 - **Migration history, in order** (all applied on production as of 2026-09-30):
   1. `full_install.sql`: schema + v2 + v3 + sample data. Fresh databases only; the old `schema.sql`, `seed.sql`, `migration_v2*.sql` and `migration_v3.sql` are history it already contains.
   2. `migrations/accounts_tables.sql`: commission_payments, commission_pending_reason, expenses.
@@ -209,6 +211,7 @@ crm/
   5. `migrations/commission_payments_v2.sql`: project, dates, payment source, reference on commission_payments.
   6. `migrations/builder_units_v2.sql`: unit maturity, builder_payments.unit_id, foreign keys, turned hand-marked "paid" units into payments.
   7. `migrations/contact_logs.sql`: contact_logs (calls with leads and clients, talk time). Applied on production 2026-10-18.
+  8. `migrations/agent_locations.sql`: agent_locations (agent position while logged in). Added 2026-10-19; **not yet run on production** until the owner confirms.
 - **Rules for new migrations:** ids are `INT UNSIGNED`, and foreign key columns must match exactly (a mismatch causes errno 150). Use standard SQL that works on MySQL 5.7/8 and MariaDB. Test on a scratch database first, add the file to this list, and give the owner the SQL with "Export a backup first".
 
 ---
@@ -279,11 +282,13 @@ crm/
 - `full_install.sql` fixed (it created an outdated `expenses` table) and fresh-install steps verified; this file replaces `crm/SESSION-CONTEXT.md` and `crm/FEATURES.md`.
 - 2026-10-18, phase 1 of the mobile app plan: Call button on every lead and client, call result popup, Contact History card, admin Call Log, agent My Clients page; phone card layout on every CRM table; inline grids collapse on phones; apostrophes no longer break Edit buttons; sales manager's team agent page shows booking and commission again (`booking_amount` key); marking a follow-up done no longer writes an invalid activity type.
 - 2026-10-18, phase 2: Distribute Leads page for admin and sales managers (share equally, assign by hand), bulk assign on All Leads.
-- **Mobile app plan (owner approved 2026-10-18):** 1) calls and talk time (done), 2) lead distribution (done): Auto Distribute splits unassigned leads equally between active agents (admin: all agents, sales manager: own team), plus manual bulk assign; the pool and claiming stay, 3) agent location every few minutes the whole time an agent is logged in, any hour (owner confirmed), admin map (OpenStreetMap); on hold until the owner asks, 4) Android APK (Capacitor) wrapping the live CRM with background location and call-log sync for exact talk time. The APK is shared directly with agents, not through the Play Store.
+- 2026-10-19, phase 3: agent location sharing while logged in (top bar badge), admin Agent Locations map with live positions and daily routes.
+- **Mobile app plan (owner approved 2026-10-18):** 1) calls and talk time (done), 2) lead distribution (done): Auto Distribute splits unassigned leads equally between active agents (admin: all agents, sales manager: own team), plus manual bulk assign; the pool and claiming stay, 3) agent location every few minutes the whole time an agent is logged in, any hour (owner confirmed), admin map (OpenStreetMap) (done 2026-10-19), 4) Android APK (Capacitor) wrapping the live CRM with background location and call-log sync for exact talk time. The APK is shared directly with agents, not through the Play Store.
 
 ---
 
 ## 14. Open items
 
 1. **Security, high priority:** the production database password is committed in `crm/config/config.php`. It was also exposed in the old `crm/SESSION-CONTEXT.md`, which was removed on 2026-10-06 but is still in git history. Move the credentials to an untracked `crm/config/config.local.php` (create it on Hostinger by hand first), then change the database user's password in hPanel.
-2. Idea: link leads and clients to builder projects (`builder_id`, `project_id`) so a converted client can become a unit automatically.
+2. Run `migrations/agent_locations.sql` on production (then mark it applied in section 8).
+3. Idea: link leads and clients to builder projects (`builder_id`, `project_id`) so a converted client can become a unit automatically.
