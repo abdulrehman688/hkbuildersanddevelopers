@@ -228,22 +228,56 @@ document.querySelectorAll('table.table-cards').forEach(function(table) {
     var label = badge.querySelector('span');
 
     var states = {
+        waiting: ['loc-wait', 'Allow location', 'Your browser is asking to share your location. Click Allow in the popup, or click the location icon in the address bar and choose Allow.'],
         on:      ['loc-on',  'Location on',  'Your location is shared with admin while you are logged in.'],
-        denied:  ['loc-off', 'Location off', 'Location is blocked. Allow location for this site in your browser or phone settings, then reload the page.'],
-        error:   ['loc-off', 'No location',  'Your phone could not find your location. Turn on Location (GPS) and reload the page.'],
+        denied:  ['loc-off', 'Location off', 'Location is blocked. Click the lock icon next to the web address, set Location to Allow, then reload the page. On a laptop also turn on Windows Settings > Privacy > Location.'],
+        error:   ['loc-off', 'No location',  'Your device could not find your location. Turn on Location (GPS on a phone, Windows location on a laptop) and reload the page.'],
         nosupport: ['loc-off', 'No location', 'This browser cannot share location.']
     };
     var current = null;
+
+    // Yellow banner under the top bar while location is not working
+    var banner = document.createElement('div');
+    banner.id = 'locBanner';
+    banner.className = 'loc-banner';
+    banner.style.display = 'none';
+    banner.innerHTML = '<span></span><button type="button" class="btn btn-primary btn-sm">Allow location</button>';
+    var topbar = document.querySelector('.topbar');
+    if (topbar) topbar.insertAdjacentElement('afterend', banner);
+
     function setState(s) {
         current = s;
-        badge.classList.remove('loc-on', 'loc-off');
+        badge.classList.remove('loc-on', 'loc-off', 'loc-wait');
         badge.classList.add(states[s][0]);
         label.textContent = states[s][1];
         badge.title = states[s][2];
+        banner.style.display = s === 'on' ? 'none' : '';
+        banner.querySelector('span').textContent = 'Admin needs your location while you are logged in. ' + states[s][2];
+        banner.querySelector('button').style.display = (s === 'waiting' || s === 'error') ? '' : 'none';
     }
-    badge.addEventListener('click', function() { if (current) alert(states[current][2]); });
+
+    // Asking from a button press makes the browser show its permission popup
+    function askNow() {
+        navigator.geolocation.getCurrentPosition(function(p) { onPosition(p, true); }, onError, opts);
+    }
+    badge.addEventListener('click', function() {
+        if (!current) return;
+        alert(states[current][2]);
+        if (current !== 'on') askNow();
+    });
+    banner.querySelector('button').addEventListener('click', askNow);
 
     if (!navigator.geolocation) { setState('nosupport'); return; }
+    setState('waiting');
+    if (navigator.permissions && navigator.permissions.query) {
+        navigator.permissions.query({ name: 'geolocation' }).then(function(perm) {
+            if (perm.state === 'denied') setState('denied');
+            perm.onchange = function() {
+                if (perm.state === 'denied') setState('denied');
+                if (perm.state === 'granted') askNow();
+            };
+        }).catch(function() {});
+    }
     if (navigator.getBattery) {
         navigator.getBattery().then(function(b) {
             battery = Math.round(b.level * 100);
