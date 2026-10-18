@@ -215,6 +215,7 @@ document.querySelectorAll('table.table-cards').forEach(function(table) {
 // ---- Agent location (agents and sales managers only) ----------
 // While an agent is logged in and the CRM is open, send the position at
 // most once a minute: every 3 minutes, or sooner after moving 150 m.
+// Location is required: the CRM stays covered until it is on.
 // The top bar badge shows whether sharing works.
 (function() {
     var meta  = document.querySelector('meta[name="location-endpoint"]');
@@ -234,16 +235,29 @@ document.querySelectorAll('table.table-cards').forEach(function(table) {
         error:   ['loc-off', 'No location',  'Your device could not find your location. Turn on Location (GPS on a phone, Windows location on a laptop) and reload the page.'],
         nosupport: ['loc-off', 'No location', 'This browser cannot share location.']
     };
-    var current = null;
+    var current = null, hasFix = false;
+    // Don't flash the notice on every page while an allowed browser finds the
+    // position: wait until it says "not allowed yet" or 4 s pass with no fix
+    var holdGate = true;
+    setTimeout(function() { holdGate = false; if (current === 'waiting') setState('waiting'); }, 4000);
 
-    // Yellow banner under the top bar while location is not working
-    var banner = document.createElement('div');
-    banner.id = 'locBanner';
-    banner.className = 'loc-banner';
-    banner.style.display = 'none';
-    banner.innerHTML = '<span></span><button type="button" class="btn btn-primary btn-sm">Allow location</button>';
-    var topbar = document.querySelector('.topbar');
-    if (topbar) topbar.insertAdjacentElement('afterend', banner);
+    // Location is required: until the browser gives a position, a full-screen
+    // notice covers the CRM. It cannot be closed, only logged out of.
+    var logoutLink = document.querySelector('.sidebar-logout');
+    var gate = document.createElement('div');
+    gate.id = 'locGate';
+    gate.className = 'loc-gate';
+    gate.innerHTML =
+        '<div class="loc-gate-box" role="dialog" aria-modal="true" aria-labelledby="locGateTitle">'
+      +   '<div class="loc-gate-icon"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z"/></svg></div>'
+      +   '<h2 id="locGateTitle">Turn on your location</h2>'
+      +   '<p>The CRM shares your location with admin while you are logged in. You can use the CRM once location is on.</p>'
+      +   '<p class="loc-gate-step"></p>'
+      +   '<button type="button" class="btn btn-primary loc-gate-allow">Allow location</button>'
+      +   '<button type="button" class="btn btn-secondary loc-gate-reload">I turned it on, reload</button>'
+      +   (logoutLink ? '<a href="' + logoutLink.href + '" class="loc-gate-logout">Log out</a>' : '')
+      + '</div>';
+    document.body.appendChild(gate);
 
     function setState(s) {
         current = s;
@@ -251,27 +265,27 @@ document.querySelectorAll('table.table-cards').forEach(function(table) {
         badge.classList.add(states[s][0]);
         label.textContent = states[s][1];
         badge.title = states[s][2];
-        banner.style.display = s === 'on' ? 'none' : '';
-        banner.querySelector('span').textContent = 'Admin needs your location while you are logged in. ' + states[s][2];
-        banner.querySelector('button').style.display = (s === 'waiting' || s === 'error') ? '' : 'none';
+        var blocked = s !== 'on' && !(s === 'waiting' && holdGate);
+        gate.classList.toggle('open', blocked);
+        document.body.classList.toggle('loc-locked', blocked);
+        gate.querySelector('.loc-gate-step').textContent = states[s][2];
+        gate.querySelector('.loc-gate-allow').style.display = s === 'denied' || s === 'nosupport' ? 'none' : '';
     }
 
     // Asking from a button press makes the browser show its permission popup
     function askNow() {
         navigator.geolocation.getCurrentPosition(function(p) { onPosition(p, true); }, onError, opts);
     }
-    badge.addEventListener('click', function() {
-        if (!current) return;
-        alert(states[current][2]);
-        if (current !== 'on') askNow();
-    });
-    banner.querySelector('button').addEventListener('click', askNow);
+    badge.addEventListener('click', function() { if (current) alert(states[current][2]); });
+    gate.querySelector('.loc-gate-allow').addEventListener('click', askNow);
+    gate.querySelector('.loc-gate-reload').addEventListener('click', function() { location.reload(); });
 
     if (!navigator.geolocation) { setState('nosupport'); return; }
     setState('waiting');
     if (navigator.permissions && navigator.permissions.query) {
         navigator.permissions.query({ name: 'geolocation' }).then(function(perm) {
             if (perm.state === 'denied') setState('denied');
+            if (perm.state === 'prompt') { holdGate = false; if (current === 'waiting') setState('waiting'); }
             perm.onchange = function() {
                 if (perm.state === 'denied') setState('denied');
                 if (perm.state === 'granted') askNow();
@@ -294,6 +308,7 @@ document.querySelectorAll('table.table-cards').forEach(function(table) {
     }
 
     function onPosition(pos, force) {
+        hasFix = true;
         setState('on');
         var p = { lat: pos.coords.latitude, lng: pos.coords.longitude, acc: pos.coords.accuracy };
         var now = Date.now();
@@ -309,7 +324,12 @@ document.querySelectorAll('table.table-cards').forEach(function(table) {
         fetch(endpoint, { method: 'POST', body: fd, credentials: 'same-origin', headers: { 'X-CSRF-Token': csrf } })
             .catch(function() { lastSent = 0; });   // retry on the next fix
     }
-    function onError(err) { setState(err.code === 1 ? 'denied' : 'error'); }
+    // Blocked = locked out. A weak signal after a good fix (indoors, lift) is
+    // not the agent's fault, so that only locks the CRM if no fix ever came.
+    function onError(err) {
+        if (err.code === 1) setState('denied');
+        else if (!hasFix) setState('error');
+    }
 
     var opts = { enableHighAccuracy: true, maximumAge: 60000, timeout: 30000 };
     navigator.geolocation.watchPosition(function(p) { onPosition(p, false); }, onError, opts);
