@@ -1,0 +1,19 @@
+{
+  "name": "hk-crm-app",
+  "version": "1.0.0",
+  "private": true,
+  "description": "HK Builders CRM Android app: opens the live CRM, adds background location and call log talk time",
+  "scripts": {
+    "sync": "cap sync android",
+    "icons": "node make-icon.js && capacitor-assets generate --android"
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.5.3",
+    "@capacitor/app": "^8.1.2",
+    "@capacitor/core": "^8.5.3"
+  },
+  "devDependencies": {
+    "@capacitor/assets": "^3.0.5",
+    "@capacitor/cli": "^8.5.3"
+  }
+}

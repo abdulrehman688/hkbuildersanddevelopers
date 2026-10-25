@@ -22,14 +22,17 @@ class LocationController {
         if (!in_array($_SESSION['user_role'] ?? '', ['agent', 'sales_manager'], true)) {
             $this->json(['ok' => false, 'error' => 'Only agents share location'], 403);
         }
-        $token = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? ($_POST['csrf_token'] ?? '');
-        if (!Security::verifyCsrfToken($token)) {
+        // JSON posts come from the Android app's background service. They need
+        // no CSRF token: the session cookie is SameSite=Strict, and another site
+        // cannot send a JSON body here without a CORS preflight we never allow.
+        $isJson = str_contains($_SERVER['CONTENT_TYPE'] ?? '', 'application/json');
+        $token  = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? ($_POST['csrf_token'] ?? '');
+        if (!$isJson && !Security::verifyCsrfToken($token)) {
             $this->json(['ok' => false, 'error' => 'Session expired'], 403);
         }
 
         $points = [];
-        $body   = str_contains($_SERVER['CONTENT_TYPE'] ?? '', 'application/json')
-            ? json_decode(file_get_contents('php://input'), true) : null;
+        $body   = $isJson ? json_decode(file_get_contents('php://input'), true) : null;
         if (is_array($body) && isset($body['points']) && is_array($body['points'])) {
             $points = array_slice($body['points'], 0, 500);
             $source = 'app';

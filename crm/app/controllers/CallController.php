@@ -6,8 +6,11 @@ require_once __DIR__ . '/../models/Client.php';
 require_once __DIR__ . '/../models/ContactLog.php';
 
 // JSON endpoint behind every Call button: /admin/call-log and /agent/call-log
-//   action=start  -> saves the call the moment the button is tapped
-//   action=finish -> saves outcome, talk time and note from the popup
+//   action=start   -> saves the call the moment the button is tapped
+//   action=finish  -> saves outcome, talk time and note from the popup
+//   action=numbers -> last 10 digits of the agent's lead and client numbers, so
+//                     the Android app only sends calls with them (never personal calls)
+//   action=sync    -> calls from the phone's call log: exact talk time
 class CallController {
 
     private function json(array $data, int $code = 200): void {
@@ -28,8 +31,10 @@ class CallController {
 
         try {
             match ($_POST['action'] ?? '') {
-                'start'  => $this->start(),
-                'finish' => $this->finish(),
+                'start'   => $this->start(),
+                'finish'  => $this->finish(),
+                'numbers' => $this->numbers(),
+                'sync'    => $this->sync(),
                 default  => $this->json(['ok' => false, 'error' => 'Unknown action'], 400),
             };
         } catch (\Throwable $e) {
@@ -80,6 +85,53 @@ class CallController {
             $phone
         );
         $this->json(['ok' => true, 'id' => $id]);
+    }
+
+    private function numbers(): void {
+        $model = new ContactLog();
+        $uid   = (int)$_SESSION['user_id'];
+        $nums  = array_map('strval', array_keys($model->getAgentNumbers($uid)));
+        // Plus Call-button calls still waiting for their exact talk time (e.g. a pool lead)
+        foreach ($model->getPendingButtonPhones($uid) as $p) $nums[] = ContactLog::last10($p);
+        $this->json(['ok' => true, 'numbers' => array_values(array_unique(array_filter($nums, fn($n) => strlen($n) === 10)))]);
+    }
+
+    private function sync(): void {
+        $uid   = (int)$_SESSION['user_id'];
+        $calls = json_decode($_POST['calls'] ?? '[]', true);
+        if (!is_array($calls)) $this->json(['ok' => false, 'error' => 'Bad data'], 400);
+
+        $model   = new ContactLog();
+        $numbers = $model->getAgentNumbers($uid);
+        $lead    = new Lead();
+        $types   = [1 => 'incoming', 2 => 'outgoing', 3 => 'missed', 5 => 'missed', 6 => 'missed', 7 => 'incoming'];
+        $words   = ['incoming' => 'Incoming', 'outgoing' => 'Outgoing', 'missed' => 'Missed'];
+        $count   = ['added' => 0, 'updated' => 0, 'skipped' => 0];
+
+        foreach (array_slice($calls, 0, 300) as $c) {
+            if (!is_array($c)) continue;
+            $ms = (int)($c['date'] ?? 0);
+            if (empty($c['id']) || $ms <= 0 || !isset($types[(int)($c['type'] ?? 0)])) continue;
+            $call = [
+                'device_id'  => mb_substr((string)$c['id'] . '-' . $ms, 0, 64),
+                'number'     => (string)($c['number'] ?? ''),
+                'direction'  => $types[(int)$c['type']],
+                'started_at' => date('Y-m-d H:i:s', (int)floor($ms / 1000)),
+                'duration'   => max(0, min(21600, (int)($c['duration'] ?? 0))),
+            ];
+            if ($ms / 1000 > time() + 60) continue;   // clock in the future: ignore
+            $result = $model->syncPhoneCall($uid, $call, $numbers);
+            $count[$result]++;
+
+            // New call found only in the phone log: note it on the lead's timeline
+            $match = $numbers[ContactLog::last10($call['number'])] ?? null;
+            if ($result === 'added' && $match && $match[0]) {
+                $lead->logActivity($match[0], $uid, 'call',
+                    'Call from phone: ' . $words[$call['direction']]
+                    . ($call['duration'] > 0 ? ', talk time ' . ContactLog::fmtDuration($call['duration']) : ', not answered') . '.');
+            }
+        }
+        $this->json(['ok' => true] + $count);
     }
 
     private function finish(): void {

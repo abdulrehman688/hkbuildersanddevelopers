@@ -132,8 +132,8 @@ ob_start();
                         <?php else: ?>-<?php endif; ?>
                     </td>
                     <td data-label="Phone" style="white-space:nowrap"><?= Security::e($r['phone'] ?? '-') ?></td>
-                    <td data-label="Result"><?= CallUi::outcomePill($r['outcome']) ?></td>
-                    <td data-label="Talk Time" style="font-weight:600"><?= $r['outcome'] === 'answered' ? ContactLog::fmtDuration($r['duration_sec'] !== null ? (int)$r['duration_sec'] : null) : '-' ?></td>
+                    <td data-label="Result"><?= CallUi::outcomePill($r['outcome']) ?><?= CallUi::direction($r) ?></td>
+                    <td data-label="Talk Time" style="font-weight:600"><?= CallUi::talkTime($r) ?></td>
                     <td class="tc-full" data-label="Note" style="font-size:12px;color:var(--text-muted)"><?= Security::e($r['note'] ?? '') ?></td>
                 </tr>
             <?php endforeach; ?>

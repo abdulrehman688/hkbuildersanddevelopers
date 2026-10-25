@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sign In — HK Builders CRM</title>
+    <title>Sign In - HK Builders CRM</title>
     <link rel="icon" type="image/svg+xml" href="<?= APP_URL ?>/favicon.svg">
     <link rel="stylesheet" href="<?= APP_URL ?>/css/app.css">
 </head>
@@ -61,7 +61,8 @@
 
             <div class="remember-row">
                 <label class="remember-label">
-                    <input type="checkbox" name="remember_me" value="1">
+                    <?php // The Android app stays signed in so background location keeps working ?>
+                    <input type="checkbox" name="remember_me" value="1" <?= str_contains($_SERVER['HTTP_USER_AGENT'] ?? '', 'HKCRMApp') ? 'checked' : '' ?>>
                     <span>Remember me for 30 days</span>
                 </label>
             </div>

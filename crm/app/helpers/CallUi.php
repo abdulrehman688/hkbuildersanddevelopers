@@ -100,8 +100,8 @@ HTML;
                     <tr>
                         <td class="tc-title" data-label="Date &amp; Time" style="white-space:nowrap"><?= date('d M Y, h:i A', strtotime($r['started_at'])) ?></td>
                         <td data-label="Agent"><?= Security::e($r['agent_name']) ?></td>
-                        <td data-label="Result"><?= self::outcomePill($r['outcome']) ?></td>
-                        <td data-label="Talk Time" style="font-weight:600"><?= $r['outcome'] === 'answered' ? ContactLog::fmtDuration($r['duration_sec'] !== null ? (int)$r['duration_sec'] : null) : '-' ?></td>
+                        <td data-label="Result"><?= self::outcomePill($r['outcome']) ?><?= self::direction($r) ?></td>
+                        <td data-label="Talk Time" style="font-weight:600"><?= self::talkTime($r) ?></td>
                         <td class="tc-full" data-label="Note" style="font-size:12px;color:var(--text-muted)"><?= Security::e($r['note'] ?? '') ?></td>
                     </tr>
                 <?php endforeach; ?>
@@ -112,6 +112,22 @@ HTML;
     </div>
 </div>
         <?php return ob_get_clean();
+    }
+
+    // "Incoming" / "Missed" under the result; outgoing is the normal case
+    public static function direction(array $r): string {
+        $d = $r['direction'] ?? 'outgoing';
+        if ($d === 'outgoing') return '';
+        return '<div class="lead-sub">' . ($d === 'missed' ? 'Missed call' : 'Incoming') . '</div>';
+    }
+
+    // Exact when it came from the phone's call log, otherwise approximate
+    public static function talkTime(array $r): string {
+        if ($r['outcome'] !== 'answered' || $r['duration_sec'] === null) return '-';
+        $t = ContactLog::fmtDuration((int)$r['duration_sec']);
+        return ($r['source'] ?? '') === 'phone_log'
+            ? $t . ' <span class="lead-sub" title="From the phone\'s call log">exact</span>'
+            : $t . ' <span class="lead-sub" title="Entered after the call">approx.</span>';
     }
 
     public static function outcomePill(?string $outcome): string {

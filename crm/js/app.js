@@ -174,7 +174,8 @@ document.querySelectorAll('table.table-cards').forEach(function(table) {
 
     form.querySelectorAll('input[name="outcome"]').forEach(function(r) {
         r.addEventListener('change', function() {
-            talkWrap.style.display = r.value === 'answered' ? '' : 'none';
+            // The app reads the exact talk time from the phone, so no need to ask
+            talkWrap.style.display = r.value === 'answered' && !hkNative() ? '' : 'none';
         });
     });
 
@@ -188,13 +189,15 @@ document.querySelectorAll('table.table-cards').forEach(function(table) {
         var secs = parseInt(document.getElementById('callSec').value, 10) || 0;
         post({
             action: 'finish', id: p.id, outcome: outcome,
-            duration_sec: outcome === 'answered' ? mins * 60 + secs : 0,
+            duration_sec: outcome !== 'answered' ? 0 : (hkNative() ? '' : mins * 60 + secs),
             note: document.getElementById('callNote').value
         }).then(function(d) {
             if (!d.ok) { errBox.textContent = d.error || 'Could not save.'; errBox.style.display = ''; return; }
             clearPending();
             closePopup();
-            if (document.getElementById('contactHistory')) location.reload();
+            (hkNative() ? syncCalls() : Promise.resolve()).then(function() {
+                if (document.getElementById('contactHistory')) location.reload();
+            });
         }).catch(function() {
             errBox.textContent = 'No internet. Try again.';
             errBox.style.display = '';
@@ -210,6 +213,65 @@ document.querySelectorAll('table.table-cards').forEach(function(table) {
     });
     // Page reloaded or reopened after the call (phone may have closed the tab)
     if (getPending()) setTimeout(showPopup, 300);
+})();
+
+// ---- HK CRM Android app ---------------------------------------
+// Inside the app the page can use the phone (plugin HkNative, see
+// mobile-app/android/.../HkNativePlugin.java). Null in a normal browser.
+function hkNative() {
+    var C = window.Capacitor;
+    if (!C || !C.isNativePlatform || !C.isNativePlatform()) return null;
+    return C.registerPlugin ? C.registerPlugin('HkNative') : (C.Plugins || {}).HkNative || null;
+}
+
+// Exact talk time: send this agent's calls with their leads and clients from
+// the phone's call log. Only matching calls leave the phone, never personal ones.
+var syncCalls = (function() {
+    var running = false;
+    return function() {
+        var HK = hkNative();
+        var ep = (document.querySelector('meta[name="call-endpoint"]') || {}).content || '';
+        var csrf = (document.querySelector('meta[name="csrf-token"]') || {}).content || '';
+        if (!HK || running || ep.indexOf('/agent/') < 0) return Promise.resolve();
+        running = true;
+        function post(data) {
+            var fd = new FormData();
+            Object.keys(data).forEach(function(k) { fd.append(k, data[k]); });
+            return fetch(ep, { method: 'POST', body: fd, credentials: 'same-origin', headers: { 'X-CSRF-Token': csrf } })
+                .then(function(r) { return r.json(); });
+        }
+        var since;
+        try { since = parseInt(localStorage.getItem('hkCallSince'), 10) || 0; } catch (e) { since = 0; }
+        if (!since) since = Date.now() - 2 * 24 * 3600 * 1000;
+        return HK.getStatus().then(function(st) {
+            if (!st.callLog) return;
+            return HK.getCallLog({ since: since }).then(function(r) {
+                var calls = r.calls || [];
+                if (!calls.length) return;
+                return post({ action: 'numbers' }).then(function(n) {
+                    var mine = {};
+                    (n.numbers || []).forEach(function(x) { mine[x] = true; });
+                    var match = calls.filter(function(c) { return mine[String(c.number || '').replace(/\D/g, '').slice(-10)]; });
+                    var save = function() { try { localStorage.setItem('hkCallSince', String(calls[calls.length - 1].date)); } catch (e) {} };
+                    if (!match.length) { save(); return; }
+                    return post({ action: 'sync', calls: JSON.stringify(match) }).then(function(d) { if (d.ok) save(); });
+                });
+            });
+        }).catch(function() {}).then(function() { running = false; });
+    };
+})();
+
+// In the app, logging out also stops the background location service
+(function() {
+    var HK = hkNative();
+    if (!HK) return;
+    if (!document.querySelector('meta[name="location-endpoint"]')) HK.stopTracking().catch(function() {});
+    document.addEventListener('click', function(e) {
+        var a = e.target.closest && e.target.closest('a[href$="/logout"]');
+        if (!a) return;
+        e.preventDefault();
+        HK.stopTracking().catch(function() {}).then(function() { location.href = a.href; });
+    });
 })();
 
 // ---- Agent location (agents and sales managers only) ----------
@@ -272,13 +334,82 @@ document.querySelectorAll('table.table-cards').forEach(function(table) {
         gate.querySelector('.loc-gate-allow').style.display = s === 'denied' || s === 'nosupport' ? 'none' : '';
     }
 
-    // Asking from a button press makes the browser show its permission popup
+    // Asking from a button press makes the browser show its permission popup.
+    // Inside the app the phone's own permissions are used instead (nativeMode).
     function askNow() {
+        if (hkNative()) return;
         navigator.geolocation.getCurrentPosition(function(p) { onPosition(p, true); }, onError, opts);
     }
     badge.addEventListener('click', function() { if (current) alert(states[current][2]); });
     gate.querySelector('.loc-gate-allow').addEventListener('click', askNow);
-    gate.querySelector('.loc-gate-reload').addEventListener('click', function() { location.reload(); });
+    gate.querySelector('.loc-gate-reload').addEventListener('click', function() { if (!hkNative()) location.reload(); });
+
+    // ---- Inside the HK CRM Android app: the phone's own permissions ----
+    var HK = hkNative();
+    if (HK) { nativeMode(HK); return; }
+
+    function nativeMode(HK) {
+        var url   = new URL(endpoint, location.href).href;
+        var login = url.replace(/\/agent\/location$/, '/login');
+        // Asked one after another; background location needs location first
+        var steps = [
+            ['location',   'Allow location',      'requestLocation',      'Tap Allow so the CRM can see your location.'],
+            ['background', 'Allow all the time',  'requestBackground',    'On the next screen choose "Allow all the time", then come back.'],
+            ['gpsOn',      'Turn on location',    'openLocationSettings', 'Your phone\'s Location (GPS) is off. Turn it on, then come back.'],
+            ['callLog',    'Allow call logs',     'requestCallLog',       'Allow call logs so your talk time with leads is recorded exactly.']
+        ];
+        states.app = ['loc-off', 'Location off', ''];
+        var stepBox = gate.querySelector('.loc-gate-step');
+        var allowBtn = gate.querySelector('.loc-gate-allow');
+        var reloadBtn = gate.querySelector('.loc-gate-reload');
+        reloadBtn.textContent = 'Open app settings';
+        reloadBtn.onclick = function() { HK.openAppSettings(); };
+        gate.querySelector('h2').textContent = 'Allow HK CRM to work';
+        gate.querySelector('p').textContent = 'HK CRM shares your location with admin while you are logged in, also when the app is closed, and records your talk time with leads. Finish these steps to use the CRM.';
+
+        var next = null, tries = {};
+        allowBtn.onclick = function() {
+            if (!next) return;
+            tries[next[0]] = (tries[next[0]] || 0) + 1;
+            HK[next[2]]().then(check, check);
+        };
+
+        function check() {
+            HK.getStatus().then(function(st) {
+                next = null;
+                for (var i = 0; i < steps.length; i++) if (!st[steps[i][0]]) { next = steps[i]; break; }
+                if (!next) {
+                    setState('on');
+                    if (!st.tracking) HK.startTracking({ url: url, login: login }).catch(function() {});
+                    if (!st.notifications) HK.requestNotifications().catch(function() {});
+                    // Some phones stop background apps to save battery: ask once
+                    if (!st.batteryUnrestricted) {
+                        try {
+                            if (!localStorage.getItem('hkBatteryAsked')) {
+                                localStorage.setItem('hkBatteryAsked', '1');
+                                HK.requestBatteryUnrestricted();
+                            }
+                        } catch (e) {}
+                    }
+                    syncCalls();
+                    return;
+                }
+                var done = steps.indexOf(next);
+                states.app[1] = next[1];
+                states.app[2] = 'Step ' + (done + 1) + ' of ' + steps.length + ': ' + next[3]
+                    + (tries[next[0]] > 1 ? ' If nothing happens, tap "Open app settings" > Permissions and allow it there.' : '');
+                allowBtn.textContent = next[1];
+                setState('app');
+                allowBtn.style.display = '';
+            }).catch(function() {});
+        }
+
+        holdGate = false;
+        check();
+        document.addEventListener('visibilitychange', function() { if (!document.hidden) { check(); syncCalls(); } });
+        setInterval(check, 30000);
+        setInterval(syncCalls, 5 * 60 * 1000);
+    }
 
     if (!navigator.geolocation) { setState('nosupport'); return; }
     setState('waiting');

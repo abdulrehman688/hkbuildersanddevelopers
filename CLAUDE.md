@@ -129,6 +129,7 @@ crm/
   js/app.js               sidebar, openModal/closeModal, Call button + call popup
   database/               full_install.sql + migrations/ (web access denied)
   docs/                   older HTML planning docs (work-plan, project-insights)
+mobile-app/               HK CRM Android app (Capacitor), see section 9a; web access denied
 ```
 `crm/app`, `crm/config` and `crm/database` each have an `.htaccess` with `Require all denied`.
 
@@ -225,6 +226,23 @@ crm/
 
 ---
 
+## 9a. Android app (HK CRM APK)
+
+- **What it is:** `mobile-app/` is a Capacitor 8 app (package `com.hkbuilders.crm`, name HK CRM) that opens the live CRM (`server.url` in `capacitor.config.json`). CRM changes reach the app as soon as they are deployed; a new APK is only needed when `mobile-app/` itself changes. Shared directly with agents (WhatsApp), not the Play Store. `mobile-app/.htaccess` denies web access because the repo deploys to `public_html`.
+- **Native part** (`mobile-app/android/app/src/main/java/com/hkbuilders/crm/`): `HkNativePlugin` (JS name `HkNative`: `getStatus`, `requestLocation`, `requestBackground`, `requestCallLog`, `requestNotifications`, `openAppSettings`, `openLocationSettings`, `requestBatteryUnrestricted`, `startTracking({url, login})`, `stopTracking`, `getCallLog({since})`) and `LocationService`, a foreground service (permanent notification) that posts location as JSON `{"points":[...]}` straight to `/agent/location` with the WebView's cookies, also with the app closed. Offline points are queued and resent. When the CRM answers "not logged in" it opens `/login` once with the remember-me cookie, stores the new cookies and retries, else stops. The login page ticks "Remember me" by default in the app (user agent contains `HKCRMApp`).
+- **CRM side** (`js/app.js`, `hkNative()` is null in a normal browser): agents must finish 4 steps before the CRM opens: location, "Allow all the time", phone Location on, call logs. Then tracking starts, battery optimisation is asked once, and the call log syncs on open, on return to the app, every 5 minutes and after each call popup: `call-log` `action=numbers` gives the last 10 digits of the agent's lead/client numbers (plus pending Call-button calls), only matching calls are sent (`action=sync`), so personal calls never leave the phone. Sync fills the exact talk time of a Call-button call (same number within 5 minutes) or adds incoming, missed and dialer calls with the agent's leads and clients (`source = phone_log`, shown as "exact"). In the app the call popup does not ask for talk time. Logout stops the service.
+- **Build** (Windows; JDK 21 in `%USERPROFILE%\.jdks`, Android SDK in `%LOCALAPPDATA%\Android\Sdk`, user env `JAVA_HOME` and `ANDROID_HOME`; `android/local.properties` has `sdk.dir`):
+  ```powershell
+  cd C:\xampp\htdocs\hkbuildersanddevelopers\mobile-app
+  npm install; npx cap sync android
+  cd android; .\gradlew.bat assembleRelease    # -> app\build\outputs\apk\release\app-release.apk
+  ```
+  `npm run icons` redraws the icon and splash (`make-icon.js`).
+- **Signing key:** `%USERPROFILE%\hk-crm-signing\hk-crm-release.jks`, password in `PASSWORD-README.txt` beside it; `android/keystore.properties` (gitignored) points to it. Never commit either. Every update must use the same key or phones refuse it; the owner keeps a backup.
+- **Releasing an update:** raise `versionCode` (and `versionName`) in `android/app/build.gradle`, build, send the APK; agents install it over the old one.
+
+---
+
 ## 10. CRM UI conventions
 
 - **Theme:** navy and gold, Cormorant Garamond plus Jost, CSS variables (`--navy`, `--gold`, `--bg`, `--bg-card`, `--text`, `--text-muted`, `--border`, `--border-light`). Money is shown as `'PKR ' . number_format($v, 0)`.
@@ -283,7 +301,8 @@ crm/
 - 2026-10-18, phase 1 of the mobile app plan: Call button on every lead and client, call result popup, Contact History card, admin Call Log, agent My Clients page; phone card layout on every CRM table; inline grids collapse on phones; apostrophes no longer break Edit buttons; sales manager's team agent page shows booking and commission again (`booking_amount` key); marking a follow-up done no longer writes an invalid activity type.
 - 2026-10-18, phase 2: Distribute Leads page for admin and sales managers (share equally, assign by hand), bulk assign on All Leads.
 - 2026-10-19, phase 3: agent location sharing while logged in (top bar badge), admin Agent Locations map with live positions and daily routes.
-- **Mobile app plan (owner approved 2026-10-18):** 1) calls and talk time (done), 2) lead distribution (done): Auto Distribute splits unassigned leads equally between active agents (admin: all agents, sales manager: own team), plus manual bulk assign; the pool and claiming stay, 3) agent location every few minutes the whole time an agent is logged in, any hour (owner confirmed), admin map (OpenStreetMap) (done 2026-10-19), 4) Android APK (Capacitor) wrapping the live CRM with background location and call-log sync for exact talk time. The APK is shared directly with agents, not through the Play Store.
+- 2026-10-25, phase 4: HK CRM Android app (APK 1.0): background location service, required permissions screen, exact talk time from the phone call log, navy and gold icon.
+- **Mobile app plan (owner approved 2026-10-18):** 1) calls and talk time (done), 2) lead distribution (done): Auto Distribute splits unassigned leads equally between active agents (admin: all agents, sales manager: own team), plus manual bulk assign; the pool and claiming stay, 3) agent location every few minutes the whole time an agent is logged in, any hour (owner confirmed), admin map (OpenStreetMap) (done 2026-10-19), 4) Android APK (Capacitor) wrapping the live CRM with background location and call-log sync for exact talk time (built 2026-10-25, see 9a). The APK is shared directly with agents, not through the Play Store.
 
 ---
 

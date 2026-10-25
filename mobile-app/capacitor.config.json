@@ -1,0 +1,15 @@
+{
+  "appId": "com.hkbuilders.crm",
+  "appName": "HK CRM",
+  "webDir": "www",
+  "server": {
+    "url": "https://www.hkbuildersanddevelopers.com/crm/",
+    "cleartext": false,
+    "errorPath": "offline.html",
+    "allowNavigation": ["www.hkbuildersanddevelopers.com", "hkbuildersanddevelopers.com"]
+  },
+  "android": {
+    "allowMixedContent": false,
+    "appendUserAgent": "HKCRMApp"
+  }
+}
