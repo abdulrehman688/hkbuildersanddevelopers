@@ -1,4 +1,8 @@
-﻿RewriteEngine On
+﻿# The site root's .htaccess sets DirectoryIndex index.html, which made /crm/
+# answer 403 (the Android app opens /crm/). The CRM folder starts at index.php.
+DirectoryIndex index.php
+
+RewriteEngine On
 RewriteBase /crm/
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d

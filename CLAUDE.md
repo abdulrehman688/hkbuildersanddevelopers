@@ -114,7 +114,7 @@ Claude Code's personal memory does not move between laptops, but everything it h
   CLAUDE.md               this file
 crm/
   index.php               front controller and route table
-  .htaccess               RewriteBase /crm/, everything to index.php?url=..., security headers
+  .htaccess               DirectoryIndex index.php, RewriteBase /crm/, everything to index.php?url=..., security headers
   config/config.php       environment detection, DB credentials, APP_URL, timezone
   config/database.php     PDO singleton
   app/controllers/        AdminController, AgentController, AuthController, AccountsController, BuildersController, CallController, DistributeController, LocationController
