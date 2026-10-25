@@ -211,7 +211,7 @@ crm/
   5. `migrations/commission_payments_v2.sql`: project, dates, payment source, reference on commission_payments.
   6. `migrations/builder_units_v2.sql`: unit maturity, builder_payments.unit_id, foreign keys, turned hand-marked "paid" units into payments.
   7. `migrations/contact_logs.sql`: contact_logs (calls with leads and clients, talk time). Applied on production 2026-10-18.
-  8. `migrations/agent_locations.sql`: agent_locations (agent position while logged in). Added 2026-10-19; **not yet run on production** until the owner confirms.
+  8. `migrations/agent_locations.sql`: agent_locations (agent position while logged in). Applied on production 2026-10-25.
 - **Rules for new migrations:** ids are `INT UNSIGNED`, and foreign key columns must match exactly (a mismatch causes errno 150). Use standard SQL that works on MySQL 5.7/8 and MariaDB. Test on a scratch database first, add the file to this list, and give the owner the SQL with "Export a backup first".
 
 ---
@@ -290,5 +290,4 @@ crm/
 ## 14. Open items
 
 1. **Security, high priority:** the production database password is committed in `crm/config/config.php`. It was also exposed in the old `crm/SESSION-CONTEXT.md`, which was removed on 2026-10-06 but is still in git history. Move the credentials to an untracked `crm/config/config.local.php` (create it on Hostinger by hand first), then change the database user's password in hPanel.
-2. Run `migrations/agent_locations.sql` on production (then mark it applied in section 8).
-3. Idea: link leads and clients to builder projects (`builder_id`, `project_id`) so a converted client can become a unit automatically.
+2. Idea: link leads and clients to builder projects (`builder_id`, `project_id`) so a converted client can become a unit automatically.
