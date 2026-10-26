@@ -2,7 +2,7 @@
 
 The complete context for this project. Claude Code loads this file automatically when the repo folder is opened, so any laptop starts with the same knowledge. Keep it current: when something important changes (new module, new migration, new rule), update this file in the same commit.
 
-Last full review: 2026-10-06.
+Last full review: 2026-10-27 (before moving to a new laptop).
 
 ---
 
@@ -25,8 +25,8 @@ The website and the CRM are not connected: the website's contact form goes to We
 
 1. **Never use the em dash character** (the long dash) anywhere: code, comments, UI text, SQL, docs, commit messages, chat. Use a comma, hyphen, colon or middot instead. When you edit a file that already contains one, replace it.
 2. **One local clone only:** `C:\xampp\htdocs\hkbuildersanddevelopers`. An older second clone (`D:\remote job\hkbuilders`, with the remote names swapped) caused push conflicts; don't work there.
-3. **Push every finished change to both remotes** (pre-approved by the owner): `git push origin master` and `git push abdulrehman688 master:main`. If a push is rejected, `git fetch <remote>` + `git rebase <remote>/<branch>`, then push again.
-4. **Pushing to `origin master` deploys to the live site within minutes** (Hostinger auto-deploy). There is no staging.
+3. **Push every finished change (and every finished phase) to both remotes** (pre-approved by the owner): `git push origin master` and `git push abdulrehman688 master:main`. If a push is rejected, `git fetch <remote>` + `git rebase <remote>/<branch>`, then push again. Claude Code's auto mode refuses to push to `origin master` itself (it is a production deploy) and refuses force pushes, so Claude pushes the mirror and gives the owner the one-line deploy command: `git -C C:/xampp/htdocs/hkbuildersanddevelopers push origin master`.
+4. **Pushing to `origin master` deploys to the live site within minutes** (Hostinger auto-deploy). There is no staging. If the change needs a migration, the owner runs the SQL first, then deploys.
 5. **Database changes are SQL migration files** in `crm/database/migrations/`. The owner runs them in Hostinger phpMyAdmin after exporting a backup. When code depends on a new migration, give the owner the SQL in a code block and tell them to run it right away, because the code is live the moment it's pushed.
 6. **Never write secrets** (DB passwords, API keys, real user passwords) into docs, chat, commits or new files.
 7. **Test before pushing.** CRM model methods catch SQL errors, log them and return empty arrays, so broken SQL shows up as silently empty pages, not errors. Lint PHP, test SQL against a real database, and check the UI on desktop and at phone width (375, 360, 320px). See section 11.
@@ -38,9 +38,10 @@ The website and the CRM are not connected: the website's contact form goes to We
 
 ### 3.1 Install
 1. **Git for Windows** (includes Git Bash and Git Credential Manager).
-2. **XAMPP** with PHP 8.2 into `C:\xampp` (gives Apache, MariaDB 10.4, phpMyAdmin).
-3. **Node.js LTS** (only used to preview the static website with `npx http-server`).
+2. **XAMPP** with PHP 8.2 into `C:\xampp` (gives Apache, MariaDB 10.4, phpMyAdmin). PHP 8.0 (XAMPP 8.0.30) also works; the code was tested on it.
+3. **Node.js LTS** (website preview with `npx http-server`, and the Android app build).
 4. **Claude Code** desktop app, signed in.
+5. Only to build the Android app: Java 21 and the Android SDK, see 3.6.
 
 ### 3.2 Clone and set remotes
 ```powershell
@@ -54,7 +55,14 @@ git fetch abdulrehman688
 ```
 Remotes must end up as: `origin` = onecinfinity (Hostinger deploys its `master`), `abdulrehman688` = mirror (push `master` to its `main`). The first push opens a GitHub sign-in; use an account with write access to both repos.
 
-Files that are **not in git** and must be copied by hand if they exist on the old laptop: `crm/config/config.local.php` (only if the credentials move described in section 14 has been done), and `.claude/` (local Claude Code settings, optional).
+Files that are **not in git** and must be copied by hand from the old laptop:
+- **`%USERPROFILE%\hk-crm-signing\` (critical):** the Android app signing key `hk-crm-release.jks` and `PASSWORD-README.txt`. Without it no app update can be installed over the agents' current app. Copy it to the same place on the new laptop (and keep the backup on Google Drive / USB).
+- `crm/config/config.local.php`, only if the credentials move in section 14 has been done.
+- `.claude/` (local Claude Code settings, optional).
+
+Recreated on the new laptop (see 3.6): `mobile-app/android/local.properties`, `mobile-app/android/keystore.properties`, `mobile-app/node_modules/`.
+
+Old laptop note: on the second laptop there was also a stale clone at `C:\Users\NLN\OneDrive\Documents\projects\hkbuildersanddevelopers` (Claude Code's session folder there). Never work in it; only `C:\xampp\htdocs\hkbuildersanddevelopers` is current.
 
 ### 3.3 Local database (`crm_system`)
 Open the XAMPP Control Panel and start **Apache** and **MySQL**. Then pick one:
@@ -70,7 +78,7 @@ foreach ($f in "full_install.sql", "migrations/accounts_tables.sql", "migrations
     & $mysql -u root crm_system -e "source $f"
 }
 ```
-This creates 24 tables plus sample users and leads (no sample clients). The sample admin login is in the "Done! Login" comment at the end of `crm/database/full_install.sql`.
+This creates 24 tables plus sample users and leads (no sample clients). The sample admin login is in the "Done! Login" comment at the end of `crm/database/full_install.sql`. Sample agents have unknown passwords; to test as an agent locally, copy the admin's password hash onto that user in the local database only (`UPDATE users SET password=(SELECT p FROM (SELECT password p FROM users WHERE id=1) t) WHERE id=8;`).
 
 ### 3.4 Run it
 - **One-time CRM junction (required).** `crm/.htaccess` uses `RewriteBase /crm/` (correct for production), so locally `/crm` must also exist inside htdocs. Without it every CRM page except real files returns 404. No admin rights needed:
@@ -92,6 +100,39 @@ Open the folder `C:\xampp\htdocs\hkbuildersanddevelopers` in Claude Code; this f
 }
 ```
 Claude Code's personal memory does not move between laptops, but everything it held for this project is in this file.
+
+If Apache or MySQL were started from a Claude Code shell, they stop when that session ends; start them from the XAMPP Control Panel instead.
+
+### 3.6 Android app build tools (only to build a new APK)
+No admin rights needed, about 1.5 GB. The Android SDK licence must be accepted (the owner accepted it on 2026-10-25).
+```powershell
+# Java 21 (Eclipse Temurin) into %USERPROFILE%\.jdks
+curl.exe -L -o $env:TEMP\jdk21.zip "https://api.adoptium.net/v3/binary/latest/21/ga/windows/x64/jdk/hotspot/normal/eclipse"
+Expand-Archive $env:TEMP\jdk21.zip "$env:USERPROFILE\.jdks"
+# Android command-line tools into %LOCALAPPDATA%\Android\Sdk\cmdline-tools\latest
+curl.exe -L -o $env:TEMP\cmdtools.zip "https://dl.google.com/android/repository/commandlinetools-win-11076708_latest.zip"
+Expand-Archive $env:TEMP\cmdtools.zip $env:TEMP\ct
+New-Item -ItemType Directory -Force "$env:LOCALAPPDATA\Android\Sdk\cmdline-tools" | Out-Null
+Move-Item $env:TEMP\ct\cmdline-tools "$env:LOCALAPPDATA\Android\Sdk\cmdline-tools\latest"
+# User environment variables (open a new terminal afterwards)
+$jdk = (Get-ChildItem "$env:USERPROFILE\.jdks" -Directory | Where-Object Name -like 'jdk-21*')[0].FullName
+[Environment]::SetEnvironmentVariable('JAVA_HOME', $jdk, 'User')
+[Environment]::SetEnvironmentVariable('ANDROID_HOME', "$env:LOCALAPPDATA\Android\Sdk", 'User')
+# SDK packages (accept the licence when asked)
+$sm = "$env:LOCALAPPDATA\Android\Sdk\cmdline-tools\latest\bin\sdkmanager.bat"
+& $sm --licenses
+& $sm "platform-tools" "platforms;android-36" "build-tools;36.0.0"
+```
+Then, in `mobile-app\android\`:
+- `local.properties`: one line `sdk.dir=C:/Users/<you>/AppData/Local/Android/Sdk`
+- `keystore.properties` (never commit), using the password from `PASSWORD-README.txt`:
+  ```
+  storeFile=C:/Users/<you>/hk-crm-signing/hk-crm-release.jks
+  storePassword=<password>
+  keyAlias=hkcrm
+  keyPassword=<password>
+  ```
+Build steps are in section 9a.
 
 ---
 
@@ -158,7 +199,7 @@ mobile-app/               HK CRM Android app (Capacitor), see section 9a; web ac
 | `/admin/notif-count`, `/agent/notif-count` | JSON for follow-up notification polling |
 | `/admin/distribute`, `/agent/distribute` | DistributeController: Distribute Leads page (admin: all agents; sales manager: own team) |
 | `/agent/location` | LocationController: JSON location ping (agents and sales managers; one point as form fields, or `{"points":[...]}` from the Android app) |
-| `/admin/call-log`, `/agent/call-log` | CallController, JSON behind the Call button (`action=start` / `finish`), CSRF token in the `X-CSRF-Token` header |
+| `/admin/call-log`, `/agent/call-log` | CallController, JSON behind the Call button (`action=start` / `finish`) and the app's call log sync (`numbers` / `sync`), CSRF token in the `X-CSRF-Token` header |
 
 **Config:** `APP_ENV` is `production` when the host contains `hkbuildersanddevelopers.com`, otherwise `development` (shows PHP errors). That decides the DB credentials and `APP_URL`. Timezone is `Asia/Karachi`, and the PDO session runs at `+05:00`. Never save a PHP file with a UTF-8 BOM: the BOM bytes are printed before any output and break JSON responses (`config.php` and `database.php` had BOMs until 2026-10-18).
 
@@ -178,11 +219,11 @@ mobile-app/               HK CRM Android app (Capacitor), see section 9a; web ac
 
 ## 7. CRM modules
 
-- **Agent location** (`agent_locations`): while an agent or sales manager is logged in and the CRM is open, `js/app.js` sends their position (with accuracy and battery) at most once a minute: every 3 minutes, or sooner after moving 150 m. The server also skips web points less than 60 s apart. A top bar badge shows Allow location (amber, browser still asking) / Location on (green) / Location off (red). **Location is required (owner, 2026-10-19):** until the browser gives a position, a full-screen notice covers the CRM for agents and sales managers (not admin); it cannot be closed, only logged out of. Its Allow location button asks again (a request from a button press makes Chrome show its popup). It appears straight away when permission is blocked or not yet given, but waits up to 4 s when location is already allowed so pages do not flash. A weak signal after a good fix does not lock the CRM. Laptops need Windows location turned on. The Android app must enforce the same rule. Admin **Agent Locations** (`/admin/locations`): Leaflet + OpenStreetMap from cdnjs, no API key; live map of each agent's last position (green = point in the last 15 minutes, grey = older), refreshed every minute from `?format=json`; table with status, last seen, accuracy, battery; **Route** for one agent and day (`?agent_id=&date=`) with start/last markers, first/last seen and distance (fixes worse than 500 m are left out of the line and the distance). A browser only sends points while the page is open; the Android app (phase 4) will send background points through the same endpoint (`source = app`, deduplicated by `device_point_id`).
+- **Agent location** (`agent_locations`): while an agent or sales manager is logged in and the CRM is open, `js/app.js` sends their position (with accuracy and battery) at most once a minute: every 3 minutes, or sooner after moving 150 m. The server also skips web points less than 60 s apart. A top bar badge shows Allow location (amber, browser still asking) / Location on (green) / Location off (red). **Location is required (owner, 2026-10-19):** until the browser gives a position, a full-screen notice covers the CRM for agents and sales managers (not admin); it cannot be closed, only logged out of. Its Allow location button asks again (a request from a button press makes Chrome show its popup). It appears straight away when permission is blocked or not yet given, but waits up to 4 s when location is already allowed so pages do not flash. A weak signal after a good fix does not lock the CRM. Laptops need Windows location turned on. The Android app must enforce the same rule. Admin **Agent Locations** (`/admin/locations`): Leaflet + OpenStreetMap from cdnjs, no API key; live map of each agent's last position (green = point in the last 15 minutes, grey = older), refreshed every minute from `?format=json`; table with status, last seen, accuracy, battery; **Route** for one agent and day (`?agent_id=&date=`) with start/last markers, first/last seen and distance (fixes worse than 500 m are left out of the line and the distance). A browser only sends points while the page is open; the Android app sends background points through the same endpoint (`source = app`, deduplicated by `device_point_id`, no CSRF token needed for its JSON posts), see 9a.
 - **Distribute Leads** (`/admin/distribute`, sales managers `/agent/distribute`): **Share Equally** deals unassigned leads one by one (hot first, then oldest) to the ticked agents, so each gets the same number; leftovers go to the agents with the fewest open leads (open = status not closed). Admin can pick any active agent or sales manager (agents ticked by default); a sales manager only the agents in their team. **Assign by Hand**: tick leads, pick an agent. Admin can also tick leads on All Leads and assign or reassign them in bulk. A lead is only taken while still unassigned, so a pool claim at the same moment wins and the lead is skipped. Every assignment adds a timeline entry ("Assigned to X by Y (auto distribute / manual / bulk)") and one audit log row. The pool and claiming stay as before.
 - **Leads:** pool and claiming, assignment, statuses, sources, activity timeline, CSV import (template at `/admin/csv-template`), follow-ups and meetings. Overdue follow-ups show as a page banner, a sidebar badge and a count in the tab title; the browser polls `notif-count`.
 - **Clients:** a lead converts to a client "file" with `file_status` mature/immature (plus a reason) and a booking amount. Agents see their own clients at `/agent/clients`.
-- **Calls** (`contact_logs`): a green **Call** button (`CallUi::button`) on every lead and client (lists, detail pages, follow-ups, pool). Tapping it saves the call (`start`), then the phone dialer opens through the normal `tel:` link. When the agent comes back, a popup asks for the result (answered, no answer, busy, switched off, wrong number), talk time (pre-filled from the time away) and a note (`finish`); the first finish also adds a "Call" entry to the lead timeline. A lead and the client it became share one **Contact History** card (calls, answered, total talk time, last call, every call). Admin **Call Log** at `/admin/calls`: totals, per-agent talk time, every call, filters, print. Agents may call their own leads and clients and unclaimed pool leads; admin may call anyone. The phone number always comes from the record, never from the browser. Talk time from the popup is approximate; the Android app (phase 4) will fill exact durations from the phone's call log (`source = phone_log`, deduplicated by `device_call_id`).
+- **Calls** (`contact_logs`): a green **Call** button (`CallUi::button`) on every lead and client (lists, detail pages, follow-ups, pool). Tapping it saves the call (`start`), then the phone dialer opens through the normal `tel:` link. When the agent comes back, a popup asks for the result (answered, no answer, busy, switched off, wrong number), talk time (pre-filled from the time away) and a note (`finish`); the first finish also adds a "Call" entry to the lead timeline. A lead and the client it became share one **Contact History** card (calls, answered, total talk time, last call, every call). Admin **Call Log** at `/admin/calls`: totals, per-agent talk time, every call, filters, print. Agents may call their own leads and clients and unclaimed pool leads; admin may call anyone. The phone number always comes from the record, never from the browser. Talk time from the popup is approximate (shown as "approx."); the Android app fills exact durations from the phone's call log (`source = phone_log`, deduplicated by `device_call_id`, shown as "exact") and also adds incoming and missed calls, see 9a. A popup without talk time keeps the exact time already synced.
 - **Agents and teams:** agent detail page with performance, yearly history and print; teams led by sales managers.
 - **Notices:** announcements and tasks with completions; activity feed at `/admin/notices?tab=activity`.
 - **Reports:** agent performance leaderboard, CSV export, print. **Audit log** at `/admin/audit`.
@@ -240,6 +281,9 @@ mobile-app/               HK CRM Android app (Capacitor), see section 9a; web ac
   `npm run icons` redraws the icon and splash (`make-icon.js`).
 - **Signing key:** `%USERPROFILE%\hk-crm-signing\hk-crm-release.jks`, password in `PASSWORD-README.txt` beside it; `android/keystore.properties` (gitignored) points to it. Never commit either. Every update must use the same key or phones refuse it; the owner keeps a backup.
 - **Releasing an update:** raise `versionCode` (and `versionName`) in `android/app/build.gradle`, build, send the APK; agents install it over the old one.
+- **Current version:** 1.0 (versionCode 1), built 2026-10-25, sent to the owner as `HK-CRM-1.0.apk`. Not yet confirmed working on a real phone.
+- **Offline page:** `www/offline.html` (Capacitor `server.errorPath`) shows on any failed first load, including an HTTP error from the server, not only when there is no internet. That is how the 403 on `/crm/` (fixed 2026-10-25 with `DirectoryIndex index.php` in `crm/.htaccess`) looked like "No internet connection".
+- **iPhone:** not built. It needs a Mac with Xcode and an Apple Developer account (about $99/year); installs only through the App Store, TestFlight or Ad Hoc (no file sharing like the APK); iOS lets no app read the call log, so no exact talk time or dialer/incoming calls, and background location is less regular. iPhone agents can use the CRM in Safari (Share > Add to Home Screen); location then only sends while the page is open. Waiting for the owner to say how many agents use iPhones.
 
 ---
 
@@ -287,7 +331,8 @@ mobile-app/               HK CRM Android app (Capacitor), see section 9a; web ac
   git fetch abdulrehman688; git rebase abdulrehman688/main; git push abdulrehman688 master:main
   ```
 - Ignore the old branches `origin/main`, `abdulrehman688/master` and `abdulrehman688/imgbot`.
-- Ignored by git: `/.claude/`, `node_modules/`, `package*.json`, `index.html.broken-backup`.
+- Ignored by git: `/.claude/`, `node_modules/`, `package*.json` (re-included for `mobile-app/`), `index.html.broken-backup`; in `mobile-app/`: build outputs, `local.properties`, `keystore.properties`, `*.jks`, `*.apk`.
+- The local `main` branch on the second laptop is an old copy with duplicate commit IDs; work on `master` only.
 
 ---
 
@@ -302,6 +347,7 @@ mobile-app/               HK CRM Android app (Capacitor), see section 9a; web ac
 - 2026-10-18, phase 2: Distribute Leads page for admin and sales managers (share equally, assign by hand), bulk assign on All Leads.
 - 2026-10-19, phase 3: agent location sharing while logged in (top bar badge), admin Agent Locations map with live positions and daily routes.
 - 2026-10-25, phase 4: HK CRM Android app (APK 1.0): background location service, required permissions screen, exact talk time from the phone call log, navy and gold icon.
+- 2026-10-25: `/crm/` answered 403 on the live server (root `DirectoryIndex index.html`), so the app showed its offline page; fixed in `crm/.htaccess` and deployed.
 - **Mobile app plan (owner approved 2026-10-18):** 1) calls and talk time (done), 2) lead distribution (done): Auto Distribute splits unassigned leads equally between active agents (admin: all agents, sales manager: own team), plus manual bulk assign; the pool and claiming stay, 3) agent location every few minutes the whole time an agent is logged in, any hour (owner confirmed), admin map (OpenStreetMap) (done 2026-10-19), 4) Android APK (Capacitor) wrapping the live CRM with background location and call-log sync for exact talk time (built 2026-10-25, see 9a). The APK is shared directly with agents, not through the Play Store.
 
 ---
@@ -309,4 +355,7 @@ mobile-app/               HK CRM Android app (Capacitor), see section 9a; web ac
 ## 14. Open items
 
 1. **Security, high priority:** the production database password is committed in `crm/config/config.php`. It was also exposed in the old `crm/SESSION-CONTEXT.md`, which was removed on 2026-10-06 but is still in git history. Move the credentials to an untracked `crm/config/config.local.php` (create it on Hostinger by hand first), then change the database user's password in hPanel.
-2. Idea: link leads and clients to builder projects (`builder_id`, `project_id`) so a converted client can become a unit automatically.
+2. **Android app 1.0 not yet confirmed on a real phone.** After the 403 fix the owner should reopen the app (Try again). Then check: the 4 permission steps, the location notification, the agent staying on the admin map with the phone locked for 10 minutes, and exact talk time after a Call-button call. Fix anything found in version 1.1.
+3. App 1.1 (next time the APK is rebuilt anyway): change the offline page wording from "No internet connection" to something like "Could not open the CRM", since it also shows for server errors.
+4. iPhone: decision pending (see 9a).
+5. Idea: link leads and clients to builder projects (`builder_id`, `project_id`) so a converted client can become a unit automatically.
