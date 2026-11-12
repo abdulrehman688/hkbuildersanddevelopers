@@ -486,6 +486,19 @@
     @keyframes waFloat{0%,100%{transform:translateY(0);}50%{transform:translateY(-9px);}}
     @keyframes waRipple{0%{transform:scale(1);opacity:0.7;}100%{transform:scale(2.6);opacity:0;}}
 
+    
+/* LEADERSHIP / THE VISIONARY */
+    .visionary{padding:120px 60px;background:var(--navy-mid);position:relative;overflow:hidden;}
+    .visionary::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 30%,rgba(201,168,76,0.06) 0%,transparent 70%);pointer-events:none;}
+    .visionary-inner{max-width:1200px;margin:0 auto;position:relative;z-index:2;}
+    .visionary-header{text-align:center;margin-bottom:50px;display:flex;flex-direction:column;align-items:center;}
+    .visionary-header .section-eyebrow{justify-content:center;}
+    .visionary-header .section-title{text-align:center;}
+    .visionary-full-card{width:100%;display:flex;justify-content:center;align-items:center;}
+    .visionary-frame{width:100%;max-width:1024px;position:relative;border:1px solid rgba(201,168,76,0.35);padding:12px;background:rgba(10,22,40,0.7);box-shadow:0 25px 60px rgba(0,0,0,0.55),0 0 40px rgba(201,168,76,0.08);border-radius:4px;transition:all 0.4s ease;}
+    .visionary-frame:hover{border-color:var(--gold);box-shadow:0 30px 70px rgba(0,0,0,0.65),0 0 50px rgba(201,168,76,0.18);}
+    .visionary-frame img{width:100%;height:auto;aspect-ratio:1024/853;object-fit:contain;display:block;border-radius:2px;}
+
     @media(max-width:1200px){.values-grid{grid-template-columns:repeat(2,1fr);}}
     @media(max-width:1024px){
       nav{padding:20px 30px;}
@@ -493,6 +506,8 @@
       .page-hero-inner{grid-template-columns:1fr;padding-top:140px;padding-bottom:80px;}
       .about-visual-wrap{display:flex;justify-content:center;}
       .mission,.values,.trust,.about-cta{padding-left:30px;padding-right:30px;}
+      .visionary{padding-left:30px;padding-right:30px;}
+      .visionary-frame{padding:8px;}
       .mission-inner{grid-template-columns:1fr;gap:50px;}
       .trust-grid{grid-template-columns:1fr;}
       .stats-inner{grid-template-columns:repeat(2,1fr);}
@@ -504,6 +519,8 @@
       nav{padding:18px 20px;}
       .page-hero{padding:0 20px;}
       .mission,.values,.trust,.about-cta,footer{padding-left:20px;padding-right:20px;}
+      .visionary{padding-left:20px;padding-right:20px;}
+      .visionary-frame{padding:6px;}
       .values-grid{grid-template-columns:1fr;}
       .about-logo-ring{width:260px;height:260px;}
       .about-logo-center{width:160px;height:160px;}
@@ -653,7 +670,39 @@
     </div>
   </section>
 
-  <!-- WHY TRUST US -->
+
+<!-- LEADERSHIP / THE VISIONARY -->
+  <section class="visionary" id="leadership">
+    <div class="visionary-inner">
+      <div class="visionary-header">
+        <div class="section-eyebrow reveal"><div class="section-eyebrow-line"></div><span>Leadership &amp; Vision</span></div>
+        <h2 class="section-title reveal reveal-delay-1">The Visionary<br><em>Behind HK</em></h2>
+      </div>
+
+      <!-- Full Uncropped Showcase Artwork -->
+      <div class="visionary-full-card reveal reveal-delay-2">
+        <div class="visionary-frame">
+          <picture>
+            <source srcset="/assets/images/leadership/visionary-hunain-khan.webp" type="image/webp">
+            <img src="/assets/images/leadership/visionary-hunain-khan.jpg" alt="Hunain Khan, Founder &amp; Chairman of HK Builders and Developers: The Visionary Behind HK" width="1024" height="853" loading="lazy" decoding="async">
+          </picture>
+        </div>
+      </div>
+
+      <!-- Board of Directors (Structured for future expansion) -->
+      <div class="board-directors-section" id="boardDirectors" style="display:none;">
+        <div class="directors-header">
+          <div class="section-eyebrow"><div class="section-eyebrow-line"></div><span>Governance</span></div>
+          <h3 class="directors-title">Board of <em>Directors</em></h3>
+        </div>
+        <div class="directors-grid">
+          <!-- Member cards will plug in here -->
+        </div>
+      </div>
+    </div>
+  </section>
+
+    <!-- WHY TRUST US -->
   <section class="trust">
     <div class="trust-inner">
       <div class="reveal">
@@ -754,7 +803,7 @@
     let mouseX=0,mouseY=0,ringX=0,ringY=0;
     document.addEventListener('mousemove',e=>{mouseX=e.clientX;mouseY=e.clientY;cursor.style.left=mouseX+'px';cursor.style.top=mouseY+'px';});
     (function tk(){ringX+=(mouseX-ringX)*0.12;ringY+=(mouseY-ringY)*0.12;ring.style.left=ringX+'px';ring.style.top=ringY+'px';requestAnimationFrame(tk);})();
-    document.querySelectorAll('a,button,.value-card,.trust-item').forEach(el=>{el.addEventListener('mouseenter',()=>{cursor.style.transform='translate(-50%,-50%) scale(2.5)';ring.style.transform='translate(-50%,-50%) scale(1.5)';ring.style.borderColor='rgba(201,168,76,0.8)';});el.addEventListener('mouseleave',()=>{cursor.style.transform='translate(-50%,-50%) scale(1)';ring.style.transform='translate(-50%,-50%) scale(1)';ring.style.borderColor='rgba(201,168,76,0.5)';});});
+    document.querySelectorAll('a,button,.value-card,.trust-item,.visionary-quote-card,.visionary-image-wrap').forEach(el=>{el.addEventListener('mouseenter',()=>{cursor.style.transform='translate(-50%,-50%) scale(2.5)';ring.style.transform='translate(-50%,-50%) scale(1.5)';ring.style.borderColor='rgba(201,168,76,0.8)';});el.addEventListener('mouseleave',()=>{cursor.style.transform='translate(-50%,-50%) scale(1)';ring.style.transform='translate(-50%,-50%) scale(1)';ring.style.borderColor='rgba(201,168,76,0.5)';});});
     window.addEventListener('scroll',()=>{const s=window.scrollY/(document.documentElement.scrollHeight-window.innerHeight);document.getElementById('scrollProgress').style.transform=`scaleX(${s})`;document.getElementById('navbar').classList.toggle('scrolled',window.scrollY>60);});
     function toggleMobile(){document.getElementById('mobileMenu').classList.toggle('open');}
     function closeMobile(){document.getElementById('mobileMenu').classList.remove('open');}
