@@ -540,6 +540,9 @@
       .hero-actions{flex-direction:column;align-items:flex-start;}
       .hero-scroll{display:none;}
     }
+  
+    /* Nav fit for 6 links on small laptops */
+    @media(min-width:1025px) and (max-width:1320px){nav,nav.scrolled{padding-left:32px;padding-right:32px;}.nav-links{gap:24px;}.nav-links a{letter-spacing:1.6px;}.nav-cta{padding:12px 24px;}}
   </style>
 </head>
 <body>
@@ -567,6 +570,7 @@
       <a href="/projects/" onclick="closeMobile()"><span class="mobile-menu-link-icon">🏗</span>Projects We Market</a>
       <a href="/clients/" onclick="closeMobile()"><span class="mobile-menu-link-icon">⭐</span>Satisfied Clients</a>
       <a href="/about/" onclick="closeMobile()"><span class="mobile-menu-link-icon">ℹ</span>About Us</a>
+      <a href="/board-of-directors/" onclick="closeMobile()"><span class="mobile-menu-link-icon">&#10022;</span>Leadership</a>
       <a href="/contact/" onclick="closeMobile()"><span class="mobile-menu-link-icon">✉</span>Contact</a>
     </div>
     <div class="mobile-menu-cta">
@@ -602,6 +606,7 @@
       <li><a href="/projects/" class="active">Projects We Market</a></li>
       <li><a href="/clients/">Satisfied Clients</a></li>
       <li><a href="/about/">About Us</a></li>
+      <li><a href="/board-of-directors/">Leadership</a></li>
       <li><a href="/contact/" class="nav-cta">Get In Touch</a></li>
     </ul>
     <div class="hamburger" id="hamburger" onclick="toggleMobile()">
@@ -943,7 +948,7 @@
             <li><a href="/">Home</a></li>
             <li><a href="/projects/">Projects We Market</a></li>
             <li><a href="/clients/">Satisfied Clients</a></li>
-            <li><a href="/about/">About Us</a></li>
+            <li><a href="/about/">About Us</a></li><li><a href="/board-of-directors/">Board of Directors</a></li>
             <li><a href="/contact/">Contact</a></li>
           </ul>
         </div>

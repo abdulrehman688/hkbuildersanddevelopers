@@ -182,6 +182,8 @@ mobile-app/               HK CRM Android app (Capacitor), see section 9a; web ac
 - **Projects:** add or change entries in `assets/js/projects.json` (ids like `united-palm-greens`), add images under `assets/images/projects/<project>/`, optionally add a landing page folder, and update `sitemap.xml`.
 - **Contact page:** Web3Forms (`fetch('https://api.web3forms.com/submit')`), WhatsApp links (`wa.me/923252208153`), and a Google Maps iframe pointing at United Palm Greens.
 - Design: navy and gold, the same palette as the CRM; the page loader is shared by every page.
+- **Leadership** (added 2026-11-14): `/board-of-directors/` page plus a founder spotlight on Home and About (About also shows the three leader cards). Styles in `assets/css/leadership.css` (the only shared stylesheet; every other style is inline per page). Portraits in `assets/images/leadership/` (`<slug>-480/720/960.webp` + `-720.jpg`, 4:5, cut from the client's posters with the baked-in text removed; `og-leadership.jpg` is the share image). Board: **Hunain Azmat Khan**, Founder & Chairman (the main person); **Shayan Azmat Khan**, Chief Financial Officer; **Tahnan Azmat Khan**, Chief Operating Officer. Their text comes from the client's posters. "Leadership" is in the nav, mobile menu and footer of every page; a small media query on every page keeps the 6 nav links on one line between 1025 and 1320px.
+- Every page's `body` has `overflow-x:hidden`; Home, About and Contact have elements a little wider than 320px that it clips (older, not from the leadership work).
 
 ---
 

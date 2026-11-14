@@ -77,6 +77,15 @@ Each major project has an independent landing page tailored for targeted ad traf
 - **Experience Emblem:** 10+ Years in Market visual orbital graphic.
 - **Core Pillars:** 4 cards highlighting "Integrity First", "Verified Titles Only", "End-to-End Support", and "Direct Developer Pricing".
 - **Leadership & Values:** Background on HK's advisory role in Karachi's real estate sector.
+- **Founder spotlight + leader cards:** "The Visionary Behind HK" (Hunain Azmat Khan, Founder & Chairman), then three cards (Chairman, CFO, COO) linking to the Board page. The same founder spotlight is on the Home page.
+
+### D2. Board of Directors (`/board-of-directors/`)
+- **Hero:** breadcrumb, "Board of Directors", the three names as jump links.
+- **Chairman:** founder spotlight (portrait in an offset gold frame, name plate, lead text, signature, 3 facts).
+- **Executive Leadership:** zigzag rows for Shayan Azmat Khan (CFO) and Tahnan Azmat Khan (COO) with role badge, text and focus chips.
+- **Leadership Principles:** Integrity, Vision, Client First, Accountability.
+- **CTA:** Get In Touch and WhatsApp.
+- Styles: `assets/css/leadership.css`. JSON-LD: Organization with founder and employees, Person per leader, BreadcrumbList.
 
 ### E. Satisfied Clients (`/clients/`)
 - **Proof & Trust:** "Stories of Trust & Delivery" hero banner.
