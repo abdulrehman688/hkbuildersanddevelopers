@@ -83,6 +83,8 @@ Each major project has an independent landing page tailored for targeted ad traf
 - **Hero:** breadcrumb, "Board of Directors", the three names as jump links.
 - **Chairman:** founder spotlight (portrait in an offset gold frame, name plate, lead text, signature, 3 facts).
 - **Executive Leadership:** zigzag rows for Shayan Azmat Khan (CFO) and Tahnan Azmat Khan (COO) with role badge, text and focus chips.
+- **Brand Portraits:** the client's three original posters as a gallery ("As Featured in Our Campaigns"); a swipe row on phones. Each opens in a `<dialog>` lightbox (arrows, keyboard, swipe, Esc). Each leader also has a "View Brand Portrait" link that opens the same lightbox. Files: `<slug>-poster-640/1000/1600.webp` and `-poster-640.jpg`.
+- **Share image:** `og-board-of-directors.jpg` (1200x630, Hunain's poster on a blurred copy of itself, gold edge).
 - **Leadership Principles:** Integrity, Vision, Client First, Accountability.
 - **CTA:** Get In Touch and WhatsApp.
 - Styles: `assets/css/leadership.css`. JSON-LD: Organization with founder and employees, Person per leader, BreadcrumbList.
